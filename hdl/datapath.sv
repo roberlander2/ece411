@@ -91,7 +91,7 @@ control CONTROL(
 
 //execute
 alu ALU(
-	.aluop(idex.aluop),
+	.aluop(idex.cw.aluop),
 	.a(alumux1_out),
 	.b(alumux2_out),
 	.f(alu_out)
@@ -100,7 +100,7 @@ alu ALU(
 cmp CMP (
 	.a(idex.rs1_out),
 	.b(cmpmux_out),
-	.cmpop(idex.cmpop),
+	.cmpop(idex.cw.cmpop),
 	.br_en(cmp_out)
 );
 

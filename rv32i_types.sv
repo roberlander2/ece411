@@ -75,9 +75,12 @@ typedef struct packed {
 	logic [4:0] src1;
 	logic [4:0] src2;
 	logic [4:0] dest;
-	logic pcmux_sel;
-	logic alumux_sel;
-	logic cmpmux_sel;
+	alumux::alumux1_sel_t alumux1_sel;
+	alumux::alumux2_sel_t alumux2_sel;
+	cmpmux::cmpmux_sel_t cmpmux_sel;
+	regfilemux::regfilemux_sel_t regfilemux_sel;
+	logic load_data_out;
+	logic load_regfile;
 	logic [11:0] i_imm; //potentially optimize
 	logic [19:0] u_imm;
 	logic [11:0] b_imm;

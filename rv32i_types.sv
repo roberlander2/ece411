@@ -70,6 +70,22 @@ typedef enum bit [2:0] {
     alu_and = 3'b111
 } alu_ops;
 
+typedef struct packed {
+	rv32i_opcode op;
+	logic [4:0] src1;
+	logic [4:0] src2;
+	logic [4:0] dest;
+	logic pcmux_sel;
+	logic alumux_sel;
+	logic cmpmux_sel;
+	logic [11:0] i_imm; //potentially optimize
+	logic [19:0] u_imm;
+	logic [11:0] b_imm;
+	logic [12:0] s_imm;
+	logic [19:0] j_imm;
+	//add all other relevant signals 
+} control_word_t;
+
 
 endpackage : rv32i_types
 

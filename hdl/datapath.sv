@@ -10,6 +10,7 @@ module datapath
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
 	output mem_write,
+	output mem_read.
 	output iread, 
 	output dread,
 	output rv32i_word mem_address,
@@ -46,18 +47,18 @@ logic br_en;
 //pipeline signals
 rv32i_word ifid_pc_out;
 
-rv32i_wrod idex_pc_out;
+rv32i_word idex_pc_out;
 rv32i_word idex_rs1_out;
 rv32i_word idex_rs2_out;
 control_word_t idex_cw;
 
-rv32i_wrod exmem_pc_out;
+rv32i_word exmem_pc_out;
 rv32i_word exmem_alu_out;
 rv32i_word exmem_rs2_out;
 rv32i_word exmem_cmp_out;
 control_word_t exmem_cw;
 
-rv32i_wrod memwb_pc_out;
+rv32i_word memwb_pc_out;
 rv32i_word memwb_alu_out;
 rv32i_word memwb_cmp_out;
 control_word_t memwb_cw;
@@ -226,7 +227,7 @@ assign br_en = (idex.cw.opcode == op_br) && cmp_out //execute stage
 assign is_jalr = (idex.cw.opcode == op_jalr);
 always_comb begin : MUXES
 	 //fetch
-    unique case ({is_jalr, br_en})		//THIS WONT WORK -- NEED 2 BIT signal
+    unique case ({is_jalr, br_en})	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;
 		  pcmux::alu_out: pcmux_out = alu_out;
 		  pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
@@ -256,7 +257,7 @@ always_comb begin : MUXES
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 
-	 //decode
+	 //write back
 	 unique case (memwb.cw.regfilemux_sel)
 	 regfilemux::alu_out: regfilemux_out = memwb.cw.alu_out;
 	 regfilemux::br_en: regfilemux_out = memwb.cw.cmp_out;

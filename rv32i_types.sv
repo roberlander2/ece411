@@ -83,6 +83,10 @@ typedef struct packed {
 	regfilemux::regfilemux_sel_t regfilemux_sel;
 	logic load_data_out;
 	logic load_regfile;
+	logic mem_read;
+	logic mem_write;
+	logic [6:0] funct7;
+	logic [2:0] funct3;
 	logic [11:0] i_imm; //potentially optimize
 	logic [19:0] u_imm;
 	logic [11:0] b_imm;

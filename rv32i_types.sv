@@ -92,7 +92,7 @@ typedef struct packed {
 	rv32i_word b_imm;
 	rv32i_word s_imm;
 	rv32i_word j_imm;
-	logic [3:0] mem_byte_enable
+	logic [3:0] wmask;
 	//add all other relevant signals 
 } control_word_t;
 

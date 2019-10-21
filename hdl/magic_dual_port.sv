@@ -2,7 +2,6 @@
  * Dual-port magic memory
  *
  */
-
 module magic_memory_dp
 (
     input clk,

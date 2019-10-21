@@ -10,12 +10,11 @@ module datapath
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
 	output mem_write,
-	output mem_read,
 	output iread, 
 	output dread,
 	output rv32i_word mem_address,
 	output rv32i_word mem_wdata,
-	output rv32i_word pc_out //needs to be outputted to the I-Cache
+	output rv32i_word pc_out, //needs to be outputted to the I-Cache
 	output logic [3:0] mem_byte_enable
 );
 assign mem_address = mem_addressmux_out;
@@ -230,7 +229,9 @@ assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage
 assign is_jalr = (idex_cw.opcode == op_jalr);
 assign is_jal = (idex_cw.opcode == op_jal);
 assign pcmux_sel = {is_jalr, (br_en || is_jal)};
-always_comb begin : MUXES
+always_comb begin
+	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
+	 dread = memwb_cw.mem_read;
 	 //fetch
     unique case (pcmux_sel)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;

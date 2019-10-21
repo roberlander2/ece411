@@ -42,11 +42,11 @@ assign op = inst[6:0];
 assign funct3 = inst[14:12];
 assign funct7 = inst[31:25];
 
-assign cw.u_imm = inst[31:12];
-assign cw.i_imm = inst[31:20];
-assign cw.s_imm = {inst[31:25], inst[11:7]};
-assign cw.b_imm = {inst[31], inst[7], inst[30:25], inst[11:8], 1'b0};
-assign cw.j_imm = {inst[31], inst[19:12], inst[20], inst[30:21], 1'b0};
+assign cw.i_imm = {{21{inst[31]}}, inst[30:20]};
+assign cw.s_imm = {{21{inst[31]}}, inst[30:25], inst[11:7]};
+assign cw.b_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+assign cw.u_imm = {inst[31:12], 12'h000};
+assign cw.j_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
 
 assign cw.src1 = inst[19:15];
 assign cw.src2 = inst[24:20];

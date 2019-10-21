@@ -87,11 +87,11 @@ typedef struct packed {
 	logic mem_write;
 	logic [6:0] funct7;
 	logic [2:0] funct3;
-	logic [11:0] i_imm; //potentially optimize -- extend to 32 bits and sign extend?
-	logic [19:0] u_imm;
-	logic [11:0] b_imm;
-	logic [12:0] s_imm;
-	logic [19:0] j_imm;
+	rv32i_word i_imm; //potentially optimize -- extend to 32 bits and sign extend?
+	rv32i_word u_imm;
+	rv32i_word b_imm;
+	rv32i_word s_imm;
+	rv32i_word j_imm;
 	//add all other relevant signals 
 } control_word_t;
 

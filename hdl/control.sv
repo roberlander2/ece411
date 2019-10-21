@@ -38,7 +38,7 @@ endfunction
 rv32i_opcode op;
 logic [6:0] funct7;
 logic [2:0] funct3;
-assign op = inst[6:0];
+assign op = rv32i_opcode'(inst[6:0]);
 assign funct3 = inst[14:12];
 assign funct7 = inst[31:25];
 

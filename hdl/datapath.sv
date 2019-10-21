@@ -17,6 +17,7 @@ module datapath
 	output rv32i_word mem_wdata,
 	output rv32i_word pc_out //needs to be outputted to the I-Cache
 );
+assign mem_address = mem_addressmux_out;
 //loads
 assign load_piperegs = 1'b1; //always high??
 logic load_pc;
@@ -29,6 +30,7 @@ rv32_word alumux1_out;
 rv32i_word alumux2_out;
 rv32i_word cmpmux_out;
 rv32i_word regfilemux_out;
+rv32i_word mem_addressmux_out;
 
 //mux selects
 logic pcmux::pcmux_sel_t pcmux_sel;
@@ -36,6 +38,7 @@ logic alumux::alumux1_sel_t alumux1_sel;
 logic alumux::alumux2_sel_t alumux2_sel;
 logic cmpmux::cmpmux_sel_t cmpmux_sel;
 logic regfilemux::regfilemux_sel_t regfilemux_sel;
+logic marmux::marmux_sel_t marmux_sel;
 
 //module outputs
 rv32i_word pc_out;
@@ -225,9 +228,11 @@ register idex_CW(
 
 assign br_en = (idex.cw.opcode == op_br) && cmp_out //execute stage 
 assign is_jalr = (idex.cw.opcode == op_jalr);
+assign is_jal = (idex.cw.opcode == op_jal);
+assign pcmux_sel = {is_jalr, (br_en || is_jal)};
 always_comb begin : MUXES
 	 //fetch
-    unique case ({is_jalr, br_en})	
+    unique case (pcmux_sel)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;
 		  pcmux::alu_out: pcmux_out = alu_out;
 		  pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
@@ -254,6 +259,13 @@ always_comb begin : MUXES
 	 unique case (idex.cw.cmpmux_sel)
 		 cmpmux::rs2_out: cmpmux_out = idex.rs2_out;
 		 cmpmux::i_imm: cmpmux_out = idex.cw.i_imm;
+		 default: `BAD_MUX_SEL;
+	 endcase
+	 
+	 //memory
+	 unique case (marmux_sel)
+		 marmux::pc_out: mem_addressmux_out = exmem_pc_out;
+		 marmux::alu_out: mem_addressmux_out = exmem_alu_out;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 

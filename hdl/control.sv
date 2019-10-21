@@ -60,13 +60,20 @@ always_comb begin : opcode_actions
 						loadRegfile(regfilemux::alu_out);
 						setALU(alumux::pc_out, alumux::u_imm, 1'b1);
 					end
-		op_jal:
-		op_jalr:
+		op_jal: begin
+					loadRegfile(regfilemux::pc_plus4);
+					setALU(alumux::pc_out, alumux::j_imm, 1'b1);
+				 end
+		op_jalr: begin
+					loadRegfile(regfilemux::pc_plus4);
+					setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
+				  end
 		op_br:  begin
 					setALU(alumux::pc_out, alumux::b_imm, 1'b1);
 					setCMP(cmpmux::rs2_out, branch_funct3);
 				  end
 		op_load: begin
+						loadMAR(marmux::alu_out);
 						setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
 						unique case(load_funct3_t'(funct3))
 						lb: loadRegfile(regfilemux::lb);
@@ -76,7 +83,12 @@ always_comb begin : opcode_actions
 						lhu:loadRegfile(regfilemux::lhu);
 					endcase
 					end
-		op_store:
+		op_store: begin
+						loadMAR(marmux::alu_out);
+						setALU(alumux::rs1_out, alumux::s_imm, 1'b1);
+						loadDATAOUT();
+						cw.mem_write = 1'b1;
+					 end
 		op_imm: begin 
 						loadRegfile(regfilemux::alu_out);
 						unique case(arith_funct3_t'(funct3))
@@ -167,7 +179,6 @@ always_comb begin : opcode_actions
 								  end
 						endcase
 					 end
-		default:
 end 
 
 endmodule: control

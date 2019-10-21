@@ -19,6 +19,7 @@ module datapath
 );
 assign mem_address = mem_addressmux_out;
 //loads
+logic load_pipregs;
 assign load_piperegs = 1'b1; //always high??
 logic load_pc;
 logic load_data_out;
@@ -45,6 +46,8 @@ control_word_t cw;
 rv32i_word alu_out;
 logic cmp_out;
 logic br_en;
+rv32i_word rs1_out;
+rv32i_word rs2_out;
 
 //pipeline signals
 rv32i_word ifid_pc_out;
@@ -63,6 +66,7 @@ control_word_t exmem_cw;
 rv32i_word memwb_pc_out;
 rv32i_word memwb_alu_out;
 rv32i_word memwb_cmp_out;
+rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
 
 //datapath modules
@@ -224,10 +228,11 @@ register memwb_CW(
     .in   (exmem_cw),
     .out  (memwb_cw)
 );
-
+logic is_jalr;
+logic is_jal;
 assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
-assign is_jalr = (idex_cw.opcode == op_jalr);
-assign is_jal = (idex_cw.opcode == op_jal);
+assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
+assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = {is_jalr, (br_en || is_jal)};
 always_comb begin
 	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];

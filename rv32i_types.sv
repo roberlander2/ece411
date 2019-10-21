@@ -76,7 +76,7 @@ typedef struct packed {
 	logic [4:0] src2;
 	logic [4:0] dest;
 	alu_ops aluop;
-	logic [2:0] cmpop;
+	branch_funct3_t cmpop;
 	alumux::alumux1_sel_t alumux1_sel;
 	alumux::alumux2_sel_t alumux2_sel;
 	cmpmux::cmpmux_sel_t cmpmux_sel;

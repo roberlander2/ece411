@@ -8,10 +8,10 @@ module mp3(
 assign inst = rdata_a;
 assign address_a = pc_out;
 assign read_a = iread; //signal from dp or just leave  high?
-assign iresp = resp_a
+assign iresp = resp_a;
 
 assign wdata = mem_wdata;
-assign write = mem_write
+assign write = mem_write;
 assign read_b = dread;
 assign wmask = mem_byte_enable;
 assign address_b = mem_address;
@@ -23,11 +23,12 @@ logic iresp;
 logic dresp;
 logic iread;
 logic dread;
-logic mem_write
+logic mem_write;
 rv32i_word mem_rdata;
 rv32i_word mem_address;
 rv32i_word mem_wdata;
 rv32i_word pc_out; //needs to be outputted to the I-Cache
+logic [3:0] mem_byte_enable
 
 datapath dp(.*);
 

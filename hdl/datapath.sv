@@ -10,12 +10,13 @@ module datapath
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
 	output mem_write,
-	output mem_read.
+	output mem_read,
 	output iread, 
 	output dread,
 	output rv32i_word mem_address,
 	output rv32i_word mem_wdata,
 	output rv32i_word pc_out //needs to be outputted to the I-Cache
+	output logic [3:0] mem_byte_enable
 );
 assign mem_address = mem_addressmux_out;
 //loads
@@ -26,23 +27,22 @@ logic load_regfile;
 
 //mux outputs
 rv32i_word pcmux_out;
-rv32_word alumux1_out;
+rv32i_word alumux1_out;
 rv32i_word alumux2_out;
 rv32i_word cmpmux_out;
 rv32i_word regfilemux_out;
 rv32i_word mem_addressmux_out;
 
 //mux selects
-logic pcmux::pcmux_sel_t pcmux_sel;
-logic alumux::alumux1_sel_t alumux1_sel;
-logic alumux::alumux2_sel_t alumux2_sel;
-logic cmpmux::cmpmux_sel_t cmpmux_sel;
-logic regfilemux::regfilemux_sel_t regfilemux_sel;
-logic marmux::marmux_sel_t marmux_sel;
+pcmux::pcmux_sel_t pcmux_sel;
+alumux::alumux1_sel_t alumux1_sel;
+alumux::alumux2_sel_t alumux2_sel;
+cmpmux::cmpmux_sel_t cmpmux_sel;
+regfilemux::regfilemux_sel_t regfilemux_sel;
+marmux::marmux_sel_t marmux_sel;
 
 //module outputs
-rv32i_word pc_out;
-rv32i_word cw;
+control_word_t cw;
 rv32i_word alu_out;
 logic cmp_out;
 logic br_en;
@@ -95,25 +95,25 @@ control CONTROL(
 
 //execute
 alu ALU(
-	.aluop(idex.cw.aluop),
+	.aluop(idex_cw.aluop),
 	.a(alumux1_out),
 	.b(alumux2_out),
 	.f(alu_out)
 );
 
 cmp CMP (
-	.a(idex.rs1_out),
+	.a(idex_rs1_out),
 	.b(cmpmux_out),
-	.cmpop(idex.cw.cmpop),
+	.cmpop(idex_cw.cmpop),
 	.br_en(cmp_out)
 );
 
 //memory
 reg_mem_data_out MEM_DATA_OUT(
 	.clk(clk),
-	.load(exmem.cw.load_data_out),
+	.load(exmem_cw.load_data_out),
 	.in(exmem_rs2_out),
-	.funct3(exmem.cw.funct3),
+	.funct3(exmem_cw.funct3),
 	.out(mem_wdata)
 );
 
@@ -162,7 +162,7 @@ register idex_CW(
 );
 
 //EX/MEM
-register idex_PC(
+register exmem_PC(
     .clk  (clk),
     .load (load_piperegs),
     .in   (idex_pc_out),
@@ -176,7 +176,7 @@ register exmem_ALU(
     .out  (exmem_alu_out)
 );
 
-register idex_RS2(
+register exmem_RS2(
     .clk  (clk),
     .load (load_piperegs),
     .in   (idex_rs2_out),
@@ -190,7 +190,7 @@ register exmem_CMP(
     .out  (exmem_cmp_out)
 );
 
-register idex_CW(
+register exmem_CW(
     .clk  (clk),
     .load (load_piperegs),
     .in   (idex_cw),
@@ -198,37 +198,37 @@ register idex_CW(
 );
 
 //MEM/WB
-register idex_PC(
+register memwb_PC(
     .clk  (clk),
     .load (load_piperegs),
     .in   (exmem_pc_out),
     .out  (memwb_pc_out)
 );
 
-register exmem_ALU(
+register memwb_ALU(
     .clk  (clk),
     .load (load_piperegs),
     .in   (exmem_alu_out),
     .out  (memwb_alu_out)
 );
 
-register idex_RS2(
+register memwb_RS2(
     .clk  (clk),
     .load (load_piperegs),
     .in   (exmem_rs2_out),
     .out  (memwb_rs2_out)
 );
 
-register idex_CW(
+register memwb_CW(
     .clk  (clk),
     .load (load_piperegs),
     .in   (exmem_cw),
     .out  (memwb_cw)
 );
 
-assign br_en = (idex.cw.opcode == op_br) && cmp_out //execute stage 
-assign is_jalr = (idex.cw.opcode == op_jalr);
-assign is_jal = (idex.cw.opcode == op_jal);
+assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
+assign is_jalr = (idex_cw.opcode == op_jalr);
+assign is_jal = (idex_cw.opcode == op_jal);
 assign pcmux_sel = {is_jalr, (br_en || is_jal)};
 always_comb begin : MUXES
 	 //fetch
@@ -240,25 +240,25 @@ always_comb begin : MUXES
     endcase
 	 	 
 	 //execute
-	 unique case (idex.cw.alumux1_sel)
+	 unique case (idex_cw.alumux1_sel)
 		 alumux::rs1_out: alumux1_out = idex_rs1_out;
 		 alumux::pc_out: alumux1_out = idex_pc_out;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 
-	 unique case (idex.cw.alumux2_sel)
-		 alumux::i_imm: alumux2_out = idex.cw.i_imm;
-		 alumux::u_imm: alumux2_out = idex.cw.u_imm;
-		 alumux::b_imm: alumux2_out = idex.cw.b_imm;
-		 alumux::s_imm: alumux2_out = idex.cw.s_imm;
-		 alumux::j_imm: alumux2_out = idex.cw.j_imm;
-		 alumux::rs2_out: alumux2_out = idex.rs2_out;
+	 unique case (idex_cw.alumux2_sel)
+		 alumux::i_imm: alumux2_out = idex_cw.i_imm;
+		 alumux::u_imm: alumux2_out = idex_cw.u_imm;
+		 alumux::b_imm: alumux2_out = idex_cw.b_imm;
+		 alumux::s_imm: alumux2_out = idex_cw.s_imm;
+		 alumux::j_imm: alumux2_out = idex_cw.j_imm;
+		 alumux::rs2_out: alumux2_out = idex_rs2_out;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 
-	 unique case (idex.cw.cmpmux_sel)
-		 cmpmux::rs2_out: cmpmux_out = idex.rs2_out;
-		 cmpmux::i_imm: cmpmux_out = idex.cw.i_imm;
+	 unique case (idex_cw.cmpmux_sel)
+		 cmpmux::rs2_out: cmpmux_out = idex_rs2_out;
+		 cmpmux::i_imm: cmpmux_out = idex_cw.i_imm;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 
@@ -270,12 +270,12 @@ always_comb begin : MUXES
 	 endcase
 	 
 	 //write back
-	 unique case (memwb.cw.regfilemux_sel)
-	 regfilemux::alu_out: regfilemux_out = memwb.cw.alu_out;
-	 regfilemux::br_en: regfilemux_out = memwb.cw.cmp_out;
-	 regfilemux::u_imm: regfilemux_out = memwb.cw.u_imm;
+	 unique case (memwb_cw.regfilemux_sel)
+	 regfilemux::alu_out: regfilemux_out = memwb_alu_out;
+	 regfilemux::br_en: regfilemux_out = memwb_cmp_out;
+	 regfilemux::u_imm: regfilemux_out = memwb_cw.u_imm;
 	 regfilemux::lw: regfilemux_out = mem_rdata;
-	 regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
+	 regfilemux::pc_plus4: regfilemux_out = memwb_pc_out + 4;
     regfilemux::lb:  begin
 								unique case(mem_address[1:0])
 									2'b00: regfilemux_out = {{24{mem_rdata[7]}}, mem_rdata[7:0]};

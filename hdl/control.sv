@@ -26,7 +26,7 @@ function void setALU(alumux::alumux1_sel_t sel1,
     if (setop)
       cw.aluop = op;
 	 else
-		cw.aluop = op_add;
+		cw.aluop = op_imm;
 endfunction
 
 function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
@@ -52,7 +52,8 @@ assign cw.src1 = inst[19:15];
 assign cw.src2 = inst[24:20];
 assign cw.dest = inst[11:7];
 always_comb begin : opcode_actions
-	unique case(op) 
+	mem_byte_enable = '0;
+	unique case(op)
 		op_lui: begin
 					loadRegfile(regfilemux::u_imm);
 				 end
@@ -70,7 +71,7 @@ always_comb begin : opcode_actions
 				  end
 		op_br:  begin
 					setALU(alumux::pc_out, alumux::b_imm, 1'b1);
-					setCMP(cmpmux::rs2_out, branch_funct3);
+					setCMP(cmpmux::rs2_out, branch_funct3_t'(funct3));
 				  end
 		op_load: begin
 						loadMAR(marmux::alu_out);
@@ -107,7 +108,7 @@ always_comb begin : opcode_actions
 								end
 							sltu:
 								begin
-									regfilemux_sel = regfilemux::br_en;
+									cw.regfilemux_sel = regfilemux::br_en;
 									setCMP(cmpmux::i_imm, bltu);
 								end
 							axor: begin
@@ -154,7 +155,7 @@ always_comb begin : opcode_actions
 								end
 							sltu:
 								begin
-									regfilemux_sel = regfilemux::br_en;
+									cw.regfilemux_sel = regfilemux::br_en;
 									setCMP(cmpmux::rs2_out, bltu);
 								end
 							axor: begin
@@ -177,8 +178,9 @@ always_comb begin : opcode_actions
 									  loadRegfile(regfilemux::alu_out);
 									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_and); 
 								  end
-						endcase
-					 end
+					endcase
+			end 
+	 endcase
 end 
 
 endmodule: control

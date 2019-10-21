@@ -26,7 +26,7 @@ function void setALU(alumux::alumux1_sel_t sel1,
     if (setop)
       cw.aluop = op;
 	 else
-		cw.aluop = op_add;
+		cw.aluop = op_imm;
 endfunction
 
 function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
@@ -35,12 +35,10 @@ function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 endfunction
 
 
-rv32i_opcode op;
-logic [6:0] funct7;
-logic [2:0] funct3;
-assign op = rv32i_opcode'(inst[6:0]);
-assign funct3 = inst[14:12];
-assign funct7 = inst[31:25];
+
+assign cw.opcode = rv32i_opcode'(inst[6:0]);
+assign cw.funct3 = inst[14:12];
+assign cw.funct7 = inst[31:25];
 
 assign cw.i_imm = {{21{inst[31]}}, inst[30:20]};
 assign cw.s_imm = {{21{inst[31]}}, inst[30:25], inst[11:7]};
@@ -52,7 +50,8 @@ assign cw.src1 = inst[19:15];
 assign cw.src2 = inst[24:20];
 assign cw.dest = inst[11:7];
 always_comb begin : opcode_actions
-	unique case(op) 
+	cw.wmask = '0;
+	unique case(cw.opcode)
 		op_lui: begin
 					loadRegfile(regfilemux::u_imm);
 				 end
@@ -70,12 +69,12 @@ always_comb begin : opcode_actions
 				  end
 		op_br:  begin
 					setALU(alumux::pc_out, alumux::b_imm, 1'b1);
-					setCMP(cmpmux::rs2_out, branch_funct3);
+					setCMP(cmpmux::rs2_out, branch_funct3_t'(cw.funct3));
 				  end
 		op_load: begin
 						loadMAR(marmux::alu_out);
 						setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
-						unique case(load_funct3_t'(funct3))
+						unique case(load_funct3_t'(cw.funct3))
 						lb: loadRegfile(regfilemux::lb);
 						lh: loadRegfile(regfilemux::lh);
 						lw: loadRegfile(regfilemux::lw);
@@ -88,10 +87,15 @@ always_comb begin : opcode_actions
 						setALU(alumux::rs1_out, alumux::s_imm, 1'b1);
 						loadDATAOUT();
 						cw.mem_write = 1'b1;
+						unique case (store_funct3_t'(cw.funct3))
+							sw: cw.wmask = 4'b1111;
+							sh: cw.wmask = 4'b0011;
+							sb: cw.wmask = 4'b0001;
+						endcase
 					 end
 		op_imm: begin 
 						loadRegfile(regfilemux::alu_out);
-						unique case(arith_funct3_t'(funct3))
+						unique case(arith_funct3_t'(cw.funct3))
 							add: begin
 									  loadRegfile(regfilemux::alu_out);
 									  setALU(alumux::rs1_out, alumux::i_imm, 1'b1, alu_add);
@@ -107,7 +111,7 @@ always_comb begin : opcode_actions
 								end
 							sltu:
 								begin
-									regfilemux_sel = regfilemux::br_en;
+									cw.regfilemux_sel = regfilemux::br_en;
 									setCMP(cmpmux::i_imm, bltu);
 								end
 							axor: begin
@@ -116,7 +120,7 @@ always_comb begin : opcode_actions
 								  end
 							sr: begin
 									loadRegfile(regfilemux::alu_out);
-									unique case(funct7)
+									unique case(cw.funct7)
 										7'b0000000: setALU(alumux::rs1_out, alumux::i_imm, 1'b1, alu_srl);
 										7'b0100000: setALU(alumux::rs1_out, alumux::i_imm, 1'b1, alu_sra);
 										default: ;
@@ -134,10 +138,10 @@ always_comb begin : opcode_actions
 					 end
 		op_reg: begin 
 						loadRegfile(regfilemux::alu_out);
-						unique case(arith_funct3_t'(funct3))
+						unique case(arith_funct3_t'(cw.funct3))
 							add: begin
 									  loadRegfile(regfilemux::alu_out);
-									  unique case(funct7)
+									  unique case(cw.funct7)
 										7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_add);
 										7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sub);
 										default: ;
@@ -154,7 +158,7 @@ always_comb begin : opcode_actions
 								end
 							sltu:
 								begin
-									regfilemux_sel = regfilemux::br_en;
+									cw.regfilemux_sel = regfilemux::br_en;
 									setCMP(cmpmux::rs2_out, bltu);
 								end
 							axor: begin
@@ -163,7 +167,7 @@ always_comb begin : opcode_actions
 								  end
 							sr: begin
 									loadRegfile(regfilemux::alu_out);
-									unique case(funct7)
+									unique case(cw.funct7)
 										7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_srl);
 										7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sra);
 										default: ;
@@ -177,8 +181,9 @@ always_comb begin : opcode_actions
 									  loadRegfile(regfilemux::alu_out);
 									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_and); 
 								  end
-						endcase
-					 end
+					endcase
+			end 
+	 endcase
 end 
 
 endmodule: control

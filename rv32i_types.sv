@@ -71,12 +71,12 @@ typedef enum bit [2:0] {
 } alu_ops;
 
 typedef struct packed {
-	rv32i_opcode op;
+	rv32i_opcode opcode;
 	logic [4:0] src1;
 	logic [4:0] src2;
 	logic [4:0] dest;
 	alu_ops aluop;
-	branch_funct3 cmpop;
+	logic [2:0] cmpop;
 	alumux::alumux1_sel_t alumux1_sel;
 	alumux::alumux2_sel_t alumux2_sel;
 	cmpmux::cmpmux_sel_t cmpmux_sel;
@@ -92,6 +92,7 @@ typedef struct packed {
 	rv32i_word b_imm;
 	rv32i_word s_imm;
 	rv32i_word j_imm;
+	logic [3:0] wmask;
 	//add all other relevant signals 
 } control_word_t;
 

@@ -14,15 +14,18 @@ module datapath
 	output dread,
 	output rv32i_word mem_address,
 	output rv32i_word mem_wdata,
-	output rv32i_word pc_out, //needs to be outputted to the I-Cache
+	output rv32i_word inst_addr, //needs to be outputted to the I-Cache
 	output logic [3:0] mem_byte_enable
 );
-assign mem_address = mem_addressmux_out;
+
 //loads
-assign load_piperegs = 1'b1; //always high??
+logic load_piperegs;
 logic load_pc;
 logic load_data_out;
 logic load_regfile;
+
+logic is_jalr;
+logic is_jal;
 
 //mux outputs
 rv32i_word pcmux_out;
@@ -45,6 +48,9 @@ control_word_t cw;
 rv32i_word alu_out;
 logic cmp_out;
 logic br_en;
+rv32i_word rs1_out;
+rv32i_word rs2_out;
+rv32i_word pc_out;
 
 //pipeline signals
 rv32i_word ifid_pc_out;
@@ -63,7 +69,18 @@ control_word_t exmem_cw;
 rv32i_word memwb_pc_out;
 rv32i_word memwb_alu_out;
 rv32i_word memwb_cmp_out;
+rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
+
+assign inst_addr = pc_out;
+assign mem_address = mem_addressmux_out;
+assign iread = 1'b1;
+assign load_pc = 1'b1;
+assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
+assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
+assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
+assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
+assign load_piperegs = 1'b1; //always high??
 
 //datapath modules
 //fetch
@@ -88,7 +105,7 @@ regfile REGFILE(
 
 control CONTROL(
 	.clk(clk),
-	.inst(inst),
+	.data(inst),
 	.cw(cw)
 );
 
@@ -153,7 +170,7 @@ register idex_RS2(
     .out  (idex_rs2_out)
 );
 
-register idex_CW(
+cw_register idex_CW(
     .clk  (clk),
     .load (load_piperegs),
     .in   (cw),
@@ -189,7 +206,7 @@ register exmem_CMP(
     .out  (exmem_cmp_out)
 );
 
-register exmem_CW(
+cw_register exmem_CW(
     .clk  (clk),
     .load (load_piperegs),
     .in   (idex_cw),
@@ -218,26 +235,31 @@ register memwb_RS2(
     .out  (memwb_rs2_out)
 );
 
-register memwb_CW(
+register memwb_CMP(
+    .clk  (clk),
+    .load (load_piperegs),
+    .in   (exmem_cmp_out), //perform ZEXT here?
+    .out  (memwb_cmp_out)
+);
+
+cw_register memwb_CW(
     .clk  (clk),
     .load (load_piperegs),
     .in   (exmem_cw),
     .out  (memwb_cw)
 );
 
-assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
-assign is_jalr = (idex_cw.opcode == op_jalr);
-assign is_jal = (idex_cw.opcode == op_jal);
-assign pcmux_sel = {is_jalr, (br_en || is_jal)};
 always_comb begin
 	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
 	 dread = memwb_cw.mem_read;
+	 mem_write = memwb_cw.mem_write;
+	 
 	 //fetch
     unique case (pcmux_sel)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;
 		  pcmux::alu_out: pcmux_out = alu_out;
 		  pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
-        default: `BAD_MUX_SEL;
+        default: pcmux_out = pc_out + 4;
     endcase
 	 	 
 	 //execute
@@ -264,7 +286,7 @@ always_comb begin
 	 endcase
 	 
 	 //memory
-	 unique case (marmux_sel)
+	 unique case (exmem_cw.marmux_sel)
 		 marmux::pc_out: mem_addressmux_out = exmem_pc_out;
 		 marmux::alu_out: mem_addressmux_out = exmem_alu_out;
 		 default: `BAD_MUX_SEL;

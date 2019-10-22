@@ -33,33 +33,34 @@ end
 /*****************************************************************************/
 // Change inputs and outputs to match
 mp3 dut(
-    .clk              (itf.clk),
-    .mem_address      (mem_address_in),
-   	.mem_wdata        (mem_wdata_in),
- 	  .mem_byte_enable  (mem_byte_enable_in),
-   	.mem_read         (mem_read_in),
- 	  .mem_write        (mem_write_in),
-    .pmem_resp        (itf.mem_resp),
-    .pmem_rdata       (itf.mem_rdata),
-
-    .mem_rdata        (mem_rdata_out),
- 	  .mem_resp         (mem_resp_out),
-    .pmem_read        (itf.mem_read),
-    .pmem_write       (itf.mem_write),
-    .pmem_address     (itf.mem_address),
-    .pmem_wdata       (itf.mem_wdata)
+    .clk        (itf.clk),
+    .read_a     (itf.read_a),
+    .address_a  (itf.address_a),
+    .resp_a     (itf.resp_a),
+    .rdata_a    (itf.rdata_a),
+    .read_b     (itf.read_b),
+    .write      (itf.write),
+    .wmask      (itf.wmask),
+    .address_b  (itf.address_b),
+    .wdata      (itf.wdata),
+    .resp_b     (itf.resp_b),
+    .rdata_b    (itf.rdata_b)
 );
 
 // Change inputs and outputs to match
 magic_memory_dp magic_memory(
-    .clk     (itf.clk),
-    .read    (itf.mem_read),
-    .write   (itf.mem_write),
-    .address (itf.mem_address),
-    .wdata   (itf.mem_wdata),
-    .resp    (itf.mem_resp),
-    .rdata   (itf.mem_rdata),
-    .error   (itf.pm_error)
+    .clk        (itf.clk),
+    .read_a     (itf.read_a),
+    .address_a  (itf.address_a),
+    .resp_a     (itf.resp_a),
+    .rdata_a    (itf.rdata_a),
+    .read_b     (itf.read_b),
+    .write      (itf.write),
+    .wmask      (itf.wmask),
+    .address_b  (itf.address_b),
+    .wdata      (itf.wdata),
+    .resp_b     (itf.resp_b),
+    .rdata_b    (itf.rdata_b)
 );
 
 endmodule : mp3_tb

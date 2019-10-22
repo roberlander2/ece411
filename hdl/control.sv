@@ -5,10 +5,11 @@ Determine state by observing the opcode of the given instruction.
 */
 module control (
 	input clk,
-	input rv32i_word inst,
+	input rv32i_word data,
 	output control_word_t cw
 );
 
+rv32i_word inst = 32'b0;
 function void loadRegfile(regfilemux::regfilemux_sel_t sel);
 	cw.load_regfile = 1'b1;
 	cw.regfilemux_sel = sel;
@@ -18,6 +19,10 @@ function void loadDATAOUT();
 	cw.load_data_out = 1'b1;
 endfunction
 
+function void loadMAR(marmux::marmux_sel_t sel);
+	cw.marmux_sel = sel;
+endfunction
+
 function void setALU(alumux::alumux1_sel_t sel1,
                                alumux::alumux2_sel_t sel2,
                                logic setop = 1'b0, alu_ops op = alu_add);
@@ -25,8 +30,6 @@ function void setALU(alumux::alumux1_sel_t sel1,
 	 cw.alumux2_sel = sel2;
     if (setop)
       cw.aluop = op;
-	 else
-		cw.aluop = op_imm;
 endfunction
 
 function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
@@ -34,23 +37,42 @@ function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 	cw.cmpop = op;
 endfunction
 
+function void set_defaults();
+	cw.aluop = alu_add;
+	cw.cmpop = beq;
+	cw.alumux1_sel = alumux::rs1_out;
+	cw.alumux2_sel = alumux::i_imm;
+	cw.cmpmux_sel = cmpmux::rs2_out;
+	cw.regfilemux_sel = regfilemux::alu_out;
+	cw.marmux_sel = marmux::pc_out;
+	cw.load_data_out = 1'b0;
+	cw.load_regfile = 1'b0;
+	cw.mem_read = 1'b0;
+	cw.mem_write = 1'b0;
+	cw.wmask = 4'b0;
+endfunction
 
+always_ff @(posedge clk) begin
+	inst <= data;
+end
 
-assign cw.opcode = rv32i_opcode'(inst[6:0]);
-assign cw.funct3 = inst[14:12];
-assign cw.funct7 = inst[31:25];
-
-assign cw.i_imm = {{21{inst[31]}}, inst[30:20]};
-assign cw.s_imm = {{21{inst[31]}}, inst[30:25], inst[11:7]};
-assign cw.b_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
-assign cw.u_imm = {inst[31:12], 12'h000};
-assign cw.j_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
-
-assign cw.src1 = inst[19:15];
-assign cw.src2 = inst[24:20];
-assign cw.dest = inst[11:7];
 always_comb begin : opcode_actions
-	cw.wmask = '0;
+	cw.opcode = rv32i_opcode'(inst[6:0]);
+	cw.funct3 = inst[14:12];
+	cw.funct7 = inst[31:25];
+	
+	cw.i_imm = {{21{inst[31]}}, inst[30:20]};
+	cw.s_imm = {{21{inst[31]}}, inst[30:25], inst[11:7]};
+	cw.b_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+	cw.u_imm = {inst[31:12], 12'h000};
+	cw.j_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
+	
+	cw.src1 = inst[19:15];
+	cw.src2 = inst[24:20];
+	cw.dest = inst[11:7];
+	
+	set_defaults();
+	
 	unique case(cw.opcode)
 		op_lui: begin
 					loadRegfile(regfilemux::u_imm);
@@ -73,14 +95,16 @@ always_comb begin : opcode_actions
 				  end
 		op_load: begin
 						loadMAR(marmux::alu_out);
+						cw.mem_read = 1'b1;
 						setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
 						unique case(load_funct3_t'(cw.funct3))
-						lb: loadRegfile(regfilemux::lb);
-						lh: loadRegfile(regfilemux::lh);
-						lw: loadRegfile(regfilemux::lw);
-						lbu:loadRegfile(regfilemux::lbu);
-						lhu:loadRegfile(regfilemux::lhu);
-					endcase
+							lb: loadRegfile(regfilemux::lb);
+							lh: loadRegfile(regfilemux::lh);
+							lw: loadRegfile(regfilemux::lw);
+							lbu:loadRegfile(regfilemux::lbu);
+							lhu:loadRegfile(regfilemux::lhu);
+							default: loadRegfile(regfilemux::lw);
+						endcase
 					end
 		op_store: begin
 						loadMAR(marmux::alu_out);
@@ -91,6 +115,7 @@ always_comb begin : opcode_actions
 							sw: cw.wmask = 4'b1111;
 							sh: cw.wmask = 4'b0011;
 							sb: cw.wmask = 4'b0001;
+							default: cw.wmask = 4'b0;
 						endcase
 					 end
 		op_imm: begin 
@@ -183,6 +208,7 @@ always_comb begin : opcode_actions
 								  end
 					endcase
 			end 
+		default: ;
 	 endcase
 end 
 

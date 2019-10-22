@@ -27,7 +27,7 @@ logic mem_write;
 rv32i_word mem_rdata;
 rv32i_word mem_address;
 rv32i_word mem_wdata;
-rv32i_word pc_out; //needs to be outputted to the I-Cache
+rv32i_word inst_addr; //needs to be outputted to the I-Cache
 logic [3:0] mem_byte_enable;
 
 assign read_a = iread;
@@ -35,7 +35,8 @@ assign read_b = dread;
 assign write = mem_write;
 assign wmask = mem_byte_enable;
 assign address_b = mem_address;
-assign address_a = pc_out;
+assign address_a = inst_addr;
+assign wdata = mem_wdata;
 
 assign iresp = resp_a;
 assign inst = rdata_a;

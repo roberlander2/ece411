@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Settings
-ECE411DIR=$HOME/ece411_mp3
+ECE411DIR=$HOME/ece411final
 DEFAULT_TARGET=$ECE411DIR/simulation/modelsim/memory.lst
 ASSEMBLER=/class/ece411/software/riscv-tools/bin/riscv32-unknown-elf-gcc
 OBJCOPY=/class/ece411/software/riscv-tools/bin/riscv32-unknown-elf-objcopy

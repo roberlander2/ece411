@@ -98,7 +98,7 @@ pc PC(
 //decode
 regfile REGFILE(
 	.clk(clk),
-	.load(cw.load_regfile),
+	.load(cw.load_regfile), //this should be memwb.load_regfile??
 	.in(regfilemux_out),
 	.src_a(cw.src1),
 	.src_b(cw.src2),

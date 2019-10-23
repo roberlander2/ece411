@@ -33,10 +33,8 @@ logic pm_error;
 // The monitor has a reset signal, which it needs, but
 // you use initial blocks in your DUT, so we generate two clocks
 initial begin
-    mon_rst = '1;
     clk = '0;
     #40;
-    mon_rst = '0;
 end
 
 always #5 clk = ~clk;

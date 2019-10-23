@@ -82,7 +82,7 @@ assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign load_piperegs = 1'b1; //always high??
 
-assign mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
+assign mem_byte_enable = memwb_cw.wmask << mem_address[1:0]; //should this be exmem_cw.wmask?
 assign dread = exmem_cw.mem_read;
 assign mem_write = memwb_cw.mem_write;
 

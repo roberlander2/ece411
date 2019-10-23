@@ -78,4 +78,29 @@ magic_memory_dp magic_memory(
     .rdata_b    (itf.rdata_b)
 );
 
+riscv_formal_monitor_rv32i monitor(
+    .clock (itf.clk),
+    .reset (itf.mon_rst),
+    .rvfi_valid (commit),
+    .rvfi_order (order),
+    .rvfi_insn (dut.datapath.IR.data),
+    .rvfi_trap(dut.control.trap),
+    .rvfi_halt(itf.halt),
+    .rvfi_intr(1'b0),
+    .rvfi_rs1_addr(dut.control.rs1_addr),
+    .rvfi_rs2_addr(dut.control.rs2_addr),
+    .rvfi_rs1_rdata(monitor.rvfi_rs1_addr ? dut.datapath.rs1_out : 0),
+    .rvfi_rs2_rdata(monitor.rvfi_rs2_addr ? dut.datapath.rs2_out : 0),
+    .rvfi_rd_addr(dut.load_regfile ? dut.datapath.rd : 5'h0),
+    .rvfi_rd_wdata(monitor.rvfi_rd_addr ? dut.datapath.regfilemux_out : 0),
+    .rvfi_pc_rdata(dut.datapath.pc_out),
+    .rvfi_pc_wdata(dut.datapath.pcmux_out),
+    .rvfi_mem_addr(itf.mem_address),
+    .rvfi_mem_rmask(dut.control.rmask),
+    .rvfi_mem_wmask(dut.control.wmask),
+    .rvfi_mem_rdata(dut.datapath.mdrreg_out >> (8 * itf.mem_address[1:0])),
+    .rvfi_mem_wdata(dut.datapath.mem_wdata  >> (8 * itf.mem_address[1:0])),
+    .errcode(itf.errcode)
+);
+
 endmodule : mp3_tb

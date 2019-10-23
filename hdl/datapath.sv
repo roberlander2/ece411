@@ -83,7 +83,7 @@ assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign load_piperegs = 1'b1; //always high??
 
 assign mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
-assign dread = memwb_cw.mem_read;
+assign dread = exmem_cw.mem_read;
 assign mem_write = memwb_cw.mem_write;
 
 //datapath modules
@@ -102,13 +102,13 @@ regfile REGFILE(
 	.in(regfilemux_out),
 	.src_a(cw.src1),
 	.src_b(cw.src2),
-	.dest(cw.dest),
+	.dest(memwb_cw.dest),
 	.reg_a(rs1_out),
 	.reg_b(rs2_out)
 );
 
 control CONTROL(
-	.clk(clk),
+//	.clk(clk),
 	.data(inst),
 	.cw(cw)
 );

@@ -4,12 +4,12 @@ described by the state diagram in MP1.
 Determine state by observing the opcode of the given instruction.
 */
 module control (
-	input clk,
+//	input clk,
 	input rv32i_word data,
 	output control_word_t cw
 );
 
-rv32i_word inst = 32'b0;
+//rv32i_word inst = 32'b0;
 function void loadRegfile(regfilemux::regfilemux_sel_t sel);
 	cw.load_regfile = 1'b1;
 	cw.regfilemux_sel = sel;
@@ -52,24 +52,24 @@ function void set_defaults();
 	cw.wmask = 4'b0;
 endfunction
 
-always_ff @(posedge clk) begin
-	inst <= data;
-end
+//always_ff @(posedge clk) begin
+//	inst <= data;
+//end
 
 always_comb begin : opcode_actions
-	cw.opcode = rv32i_opcode'(inst[6:0]);
-	cw.funct3 = inst[14:12];
-	cw.funct7 = inst[31:25];
+	cw.opcode = rv32i_opcode'(data[6:0]);
+	cw.funct3 = data[14:12];
+	cw.funct7 = data[31:25];
 	
-	cw.i_imm = {{21{inst[31]}}, inst[30:20]};
-	cw.s_imm = {{21{inst[31]}}, inst[30:25], inst[11:7]};
-	cw.b_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
-	cw.u_imm = {inst[31:12], 12'h000};
-	cw.j_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
+	cw.i_imm = {{21{data[31]}}, data[30:20]};
+	cw.s_imm = {{21{data[31]}}, data[30:25], data[11:7]};
+	cw.b_imm = {{20{data[31]}}, data[7], data[30:25], data[11:8], 1'b0};
+	cw.u_imm = {data[31:12], 12'h000};
+	cw.j_imm = {{12{data[31]}}, data[19:12], data[20], data[30:21], 1'b0};
 	
-	cw.src1 = inst[19:15];
-	cw.src2 = inst[24:20];
-	cw.dest = inst[11:7];
+	cw.src1 = data[19:15];
+	cw.src2 = data[24:20];
+	cw.dest = data[11:7];
 	
 	set_defaults();
 	

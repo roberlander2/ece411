@@ -43,7 +43,9 @@ begin : response
         resp_a <= 1'b1;
         for (int i = 0; i < 4; i++) begin
             rdata_a[i*8 +: 8] <= mem[internal_address_a+i];
+            $display("address = 0x%8h, data = 0x%2h", internal_address_a+i, mem[internal_address_a+i]);
         end
+        $display("rdata = 0x%8h", rdata_a);
     end else begin
         resp_a <= 1'b0;
     end
@@ -67,4 +69,3 @@ begin : response
 end : response
 
 endmodule : magic_memory_dp
-

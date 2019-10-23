@@ -11,7 +11,7 @@ bit clk;
 
 // Port A
 logic read_a;
-logic [31:0] address_a
+logic [31:0] address_a;
 logic resp_a;
 logic [31:0] rdata_a;
 

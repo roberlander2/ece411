@@ -3,19 +3,19 @@ import rv32i_types::*;
 module mp3(
 	input clk,
 	/* Port A */
-	output read_a,
-   output [31:0] address_a,
-   input logic resp_a,
-   input logic [31:0] rdata_a,
+	output logic read_a,
+   output logic [31:0] address_a,
+   input resp_a,
+   input [31:0] rdata_a,
 
     /* Port B */
-   output read_b,
-	output write,
-   output [3:0] wmask,
-   output [31:0] address_b,
-   output [31:0] wdata,    
-	input logic resp_b,
-   input logic [31:0] rdata_b
+   output logic read_b,
+	output logic write,
+   output logic [3:0] wmask,
+   output logic [31:0] address_b,
+   output logic [31:0] wdata,    
+	input resp_b,
+   input [31:0] rdata_b
 );
 
 rv32i_word inst; //inputted from the I-Cache

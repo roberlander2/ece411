@@ -9,9 +9,9 @@ module datapath
 	input dresp,
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
-	output mem_write,
-	output iread, 
-	output dread,
+	output logic mem_write,
+	output logic iread, 
+	output logic dread,
 	output rv32i_word mem_address,
 	output rv32i_word mem_wdata,
 	output rv32i_word inst_addr, //needs to be outputted to the I-Cache
@@ -81,6 +81,10 @@ assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign load_piperegs = 1'b1; //always high??
+
+assign mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
+assign dread = memwb_cw.mem_read;
+assign mem_write = memwb_cw.mem_write;
 
 //datapath modules
 //fetch
@@ -250,9 +254,9 @@ cw_register memwb_CW(
 );
 
 always_comb begin
-	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
-	 dread = memwb_cw.mem_read;
-	 mem_write = memwb_cw.mem_write;
+//	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
+//	 dread = memwb_cw.mem_read;
+//	 mem_write = memwb_cw.mem_write;
 	 
 	 //fetch
     unique case (pcmux_sel)	

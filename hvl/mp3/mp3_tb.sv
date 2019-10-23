@@ -8,7 +8,11 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
 int timeout = 100000000;   // Feel Free to adjust the timeout value
+int halt_count = 0;
 
+initial begin
+    itf.halt = 1'b0;
+end
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
 // always @(posedge itf.clk iff itf.pm_error) begin
@@ -17,6 +21,11 @@ int timeout = 100000000;   // Feel Free to adjust the timeout value
 
 // Stop simulation on timeout (stall detection), halt
 always @(posedge itf.clk) begin
+    if (dut.dp.load_pc && dut.dp.pc_out == 8'h00000144) begin
+        halt_count <= halt_count + 1;
+        if (halt_count == 3)
+            itf.halt <= 1'b1;
+    end
     if (itf.halt)
         $finish;
     if (timeout == 0) begin

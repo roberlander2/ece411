@@ -4,19 +4,13 @@ described by the state diagram in MP1.
 Determine state by observing the opcode of the given instruction.
 */
 module control (
-//	input clk,
 	input rv32i_word data,
 	output control_word_t cw
 );
 
-//rv32i_word inst = 32'b0;
 function void loadRegfile(regfilemux::regfilemux_sel_t sel);
 	cw.load_regfile = 1'b1;
 	cw.regfilemux_sel = sel;
-endfunction
-
-function void loadDATAOUT();
-	cw.load_data_out = 1'b1;
 endfunction
 
 function void loadMAR(marmux::marmux_sel_t sel);
@@ -44,17 +38,11 @@ function void set_defaults();
 	cw.alumux2_sel = alumux::i_imm;
 	cw.cmpmux_sel = cmpmux::rs2_out;
 	cw.regfilemux_sel = regfilemux::alu_out;
-	cw.marmux_sel = marmux::pc_out;
-	cw.load_data_out = 1'b0;
 	cw.load_regfile = 1'b0;
 	cw.mem_read = 1'b0;
 	cw.mem_write = 1'b0;
 	cw.wmask = 4'b0;
 endfunction
-
-//always_ff @(posedge clk) begin
-//	inst <= data;
-//end
 
 always_comb begin : opcode_actions
 	cw.opcode = rv32i_opcode'(data[6:0]);
@@ -109,7 +97,6 @@ always_comb begin : opcode_actions
 		op_store: begin
 						loadMAR(marmux::alu_out);
 						setALU(alumux::rs1_out, alumux::s_imm, 1'b1);
-						loadDATAOUT();
 						cw.mem_write = 1'b1;
 						unique case (store_funct3_t'(cw.funct3))
 							sw: cw.wmask = 4'b1111;

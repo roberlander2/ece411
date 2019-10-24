@@ -9,7 +9,7 @@ module datapath
 	input dresp,
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
-	output logic mem_write,
+	output logic dwrite,
 	output logic iread, 
 	output logic dread,
 	output rv32i_word mem_address,
@@ -21,8 +21,6 @@ module datapath
 //loads
 logic load_piperegs;
 logic load_pc;
-logic load_data_out;
-logic load_regfile;
 
 logic is_jalr;
 logic is_jal;
@@ -80,11 +78,11 @@ assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage
 assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
-assign load_piperegs = 1'b1; //always high??
+assign load_piperegs = 1'b1; //always high until stalls are implemented
 
-assign mem_byte_enable = memwb_cw.wmask << mem_address[1:0]; //should this be exmem_cw.wmask?
+assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
-assign mem_write = memwb_cw.mem_write;
+assign dwrite = exmem_cw.mem_write;
 
 //datapath modules
 //fetch
@@ -98,7 +96,7 @@ pc PC(
 //decode
 regfile REGFILE(
 	.clk(clk),
-	.load(cw.load_regfile), //this should be memwb.load_regfile??
+	.load(memwb_cw.load_regfile),
 	.in(regfilemux_out),
 	.src_a(cw.src1),
 	.src_b(cw.src2),
@@ -108,7 +106,6 @@ regfile REGFILE(
 );
 
 control CONTROL(
-//	.clk(clk),
 	.data(inst),
 	.cw(cw)
 );
@@ -130,8 +127,6 @@ cmp CMP (
 
 //memory
 reg_mem_data_out MEM_DATA_OUT(
-	.clk(clk),
-	.load(exmem_cw.load_data_out),
 	.in(exmem_rs2_out),
 	.funct3(exmem_cw.funct3),
 	.out(mem_wdata)
@@ -253,11 +248,7 @@ cw_register memwb_CW(
     .out  (memwb_cw)
 );
 
-always_comb begin
-//	 mem_byte_enable = memwb_cw.wmask << mem_address[1:0];
-//	 dread = memwb_cw.mem_read;
-//	 mem_write = memwb_cw.mem_write;
-	 
+always_comb begin	 
 	 //fetch
     unique case (pcmux_sel)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;

@@ -82,7 +82,6 @@ typedef struct packed {
 	cmpmux::cmpmux_sel_t cmpmux_sel;
 	regfilemux::regfilemux_sel_t regfilemux_sel;
 	marmux::marmux_sel_t marmux_sel;
-	logic load_data_out;
 	logic load_regfile;
 	logic mem_read;
 	logic mem_write;

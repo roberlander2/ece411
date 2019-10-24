@@ -23,7 +23,7 @@ logic iresp;
 logic dresp;
 logic iread;
 logic dread;
-logic mem_write;
+logic dwrite;
 rv32i_word mem_rdata;
 rv32i_word mem_address;
 rv32i_word mem_wdata;
@@ -32,7 +32,7 @@ logic [3:0] mem_byte_enable;
 
 assign read_a = iread;
 assign read_b = dread;
-assign write = mem_write;
+assign write = dwrite;
 assign wmask = mem_byte_enable;
 assign address_b = mem_address;
 assign address_a = inst_addr;

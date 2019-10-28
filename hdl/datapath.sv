@@ -19,7 +19,7 @@ module datapath
 );
 
 //loads
-logic load_piperegs;
+logic load_pipeline;
 logic load_pc;
 
 logic is_jalr;
@@ -78,7 +78,7 @@ assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage
 assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
-assign load_piperegs = 1'b1; //always high until stalls are implemented
+assign load_pipeline = 1'b1; //always high until stalls are implemented
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -142,7 +142,7 @@ reg_mem_data_out MEM_DATA_OUT(
 //IF/ID
 register ifid_PC(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (pc_out),
     .out  (ifid_pc_out)
 );
@@ -150,28 +150,28 @@ register ifid_PC(
 //ID/EX
 register idex_PC(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
 );
 
 register idex_RS1(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (rs1_out),
     .out  (idex_rs1_out)
 );
 
 register idex_RS2(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (rs2_out),
     .out  (idex_rs2_out)
 );
 
 cw_register idex_CW(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (cw),
     .out  (idex_cw)
 );
@@ -179,35 +179,35 @@ cw_register idex_CW(
 //EX/MEM
 register exmem_PC(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (idex_pc_out),
     .out  (exmem_pc_out)
 );
 
 register exmem_ALU(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (alu_out),
     .out  (exmem_alu_out)
 );
 
 register exmem_RS2(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (idex_rs2_out),
     .out  (exmem_rs2_out)
 );
 
 register exmem_CMP(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   ({31'b0, cmp_out}), //perform ZEXT here?
     .out  (exmem_cmp_out)
 );
 
 cw_register exmem_CW(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (idex_cw),
     .out  (exmem_cw)
 );
@@ -215,35 +215,35 @@ cw_register exmem_CW(
 //MEM/WB
 register memwb_PC(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (exmem_pc_out),
     .out  (memwb_pc_out)
 );
 
 register memwb_ALU(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (exmem_alu_out),
     .out  (memwb_alu_out)
 );
 
 register memwb_RS2(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (exmem_rs2_out),
     .out  (memwb_rs2_out)
 );
 
 register memwb_CMP(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (exmem_cmp_out), //perform ZEXT here?
     .out  (memwb_cmp_out)
 );
 
 cw_register memwb_CW(
     .clk  (clk),
-    .load (load_piperegs),
+    .load (load_pipeline),
     .in   (exmem_cw),
     .out  (memwb_cw)
 );

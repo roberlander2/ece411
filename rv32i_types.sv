@@ -96,6 +96,14 @@ typedef struct packed {
 	//add all other relevant signals 
 } control_word_t;
 
+typedef struct packed {
+	rv32i_word address;
+	logic mem_read;
+	logic mem_write;
+	logic [4:0] mem_byte_enable;
+	logic [32:0] mem_wdata;
+} cache_cw_t;
+
 
 endpackage : rv32i_types
 

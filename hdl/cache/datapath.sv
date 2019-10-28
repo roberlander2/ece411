@@ -71,19 +71,21 @@ assign hit = (tag1_hit) || (tag0_hit);
 
 assign write_en0_sel = {load_data[0], mem_read};
 assign write_en1_sel = {load_data[1], mem_read};
-assign data_sel = (index & cw.index);
+assign data_sel = (index & cache_cw.address[7:5]);
 assign pipe_read = 1'b1;
 
 assign cache_cw.address = mem_address;
 assign cache_cw.mem_read = mem_read;
 assign cache_cw.mem_write = mem_write;
+assign cache_cw.mem_byte_enable256 = mem_byte_enable256;
+assign cache_cw.mem_wdata256 =  mem_wdata256;
 
 //modules
 data_array line[1:0] (
 	.clk(clk),
 	.write_en(write_en_mux_out),
 	.rindex(index),
-	.windex(index), //should be cw.index but cw has not been implemented yet
+	.windex(cache_cw.address[7:5]), //should be cw.index but cw has not been implemented yet
 	.read(read_data),
 	.datain(datain),
 	.dataout(data_out)
@@ -93,7 +95,8 @@ array #(3,24) tag[1:0] (
 	.clk(clk),
 	.load(load_tag),
 	.read(read_data),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(tag_in),
 	.dataout(tag_out)
 );
@@ -102,7 +105,8 @@ array valid1 (
 	.clk(clk),
 	.load(set_valid1),
 	.read(read_high),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(valid_in),
 	.dataout(valid_out1)
 );
@@ -111,7 +115,8 @@ array valid0 (
 	.clk(clk),
 	.load(set_valid0),
 	.read(read_high),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(valid_in),
 	.dataout(valid_out0)
 );
@@ -120,7 +125,8 @@ array dirty1 (
 	.clk(clk),
 	.load(load_dirty1),
 	.read(read_high),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(load_dirty1),
 	.dataout(dirty_out1)
 );
@@ -129,7 +135,8 @@ array dirty0 (
 	.clk(clk),
 	.load(load_dirty0),
 	.read(read_high),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(load_dirty0),
 	.dataout(dirty_out0)
 );
@@ -138,7 +145,8 @@ array #(3, 1) LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.index(index),
+	.rindex(index),
+	.windex(cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
 );
@@ -193,7 +201,7 @@ register #(1) pipe_VALID0(
 );
 
 register #(1) pipe_VALID1(
-	.clk(clk),pipe_dirty1
+	.clk(clk),
 	.load(load_pipeline),
 	.in(valid_out1),
 	.out(pipe_valid1)
@@ -213,7 +221,14 @@ register #(1) pipe_DIRTY1(
 	.out(pipe_dirty1)
 );
 
-cache_cw_reg(
+register #(1) pipe_LRU(
+	.clk(clk),
+	.load(load_pipeline),
+	.in(lru_out),
+	.out(pipe_lru)
+);
+
+cache_cw_reg CW(
 	.clk(clk),
 	.load(load_pipeline),
 	.in(cache_cw),

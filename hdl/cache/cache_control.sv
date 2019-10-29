@@ -111,22 +111,23 @@ always_comb begin
 							end
 						end
 						else begin
+							load_pipeline  = 1'b0; //stall the pipeline
 							if(dirty_ctrl) begin
 								pmem_write = 1'b1;
-								clear_dirty0 = ~cache_cw.lru_out;
-								clear_dirty1 = cache_cw.lru_out;
+								clear_dirty0 = ~lru_out;
+								clear_dirty1 = lru_out;
 							end
 							else begin
 								pmem_read = 1'b1;
 							end
 						end
 		load: if(pmem_resp) begin
-					load_data[0] = ~cache_cw.lru_out;
-					load_tag[0] = ~cache_cw.lru_out;
-					load_data[1] = cache_cw.lru_out;
-					load_tag[1] = cache_cw.lru_out;
-					set_valid0 = ~cache_cw.lru_out;
-					set_valid1 = cache_cw.lru_out;
+					load_data[0] = ~lru_out;
+					load_tag[0] = ~lru_out;
+					load_data[1] = lru_out;
+					load_tag[1] = lru_out;
+					set_valid0 = ~lru_out;
+					set_valid1 = lru_out;
 				end
 				else begin
 					pmem_read = 1'b1;
@@ -136,9 +137,10 @@ always_comb begin
 				end
 				else begin
 					pmem_write = 1'b1;
-					clear_dirty0 = ~cache_cw.lru_out;
-					clear_dirty1 = cache_cw.lru_out;
+					clear_dirty0 = ~lru_out;
+					clear_dirty1 = lru_out;
 				end
+		write_data: read_data = mem_read | mem_write; //cache_cw.mem_read  | cache_cw.mem_write ???
 	endcase
 end
 

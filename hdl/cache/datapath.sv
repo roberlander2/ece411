@@ -3,6 +3,7 @@ import write_en_mux::*;
 import dirty_mux::*;
 import mem_wdata256mux::*;
 import pmem_addr_mux::*;
+import bus_adapter_mux::*;
 
 module cache_dp #(
     parameter s_offset = 5,
@@ -62,15 +63,7 @@ assign index = mem_address[7:5];
 assign tag_in = mem_address[31:8];
 assign read_high = 1'b1;
 assign valid_in = 1'b1;
-assign load_dirty0 = set_dirty0 || clear_dirty0;
-assign load_dirty1 = set_dirty1 | clear_dirty1;
-assign lru_in = tag0_hit;
-assign tag1_hit = (tag_out[1] == mem_address[31:8]) && (valid_out1 == 1'b1);
-assign tag0_hit = (tag_out[0] == mem_address[31:8]) && (valid_out0 == 1'b1);
-assign hit = (tag1_hit) || (tag0_hit);
 
-assign write_en0_sel = {load_data[0], mem_read};
-assign write_en1_sel = {load_data[1], mem_read};
 assign data_sel = (index & cache_cw.address[7:5]);
 assign pipe_read = 1'b1;
 
@@ -160,6 +153,7 @@ logic pipe_valid1;
 logic pipe_dirty0;
 logic pipe_dirty1;
 logic pipe_lru;
+cache_cw_t pipe_cache_cw;
 
 //pipeline registers
 data_reg pipe_DATA0(
@@ -234,5 +228,98 @@ cache_cw_reg CW(
 	.in(cache_cw),
 	.out(pipe_cache_cw)
 );
+
+
+//cache combinational logic and muxes -- pipeline stage 2
+assign load_dirty0 = set_dirty0 || clear_dirty0;
+assign load_dirty1 = set_dirty1 | clear_dirty1;
+assign lru_in = tag0_hit;
+assign tag1_hit = (pipe_tag1 == pipe_cache_cw.address[31:8]) && (pipe_valid1 == 1'b1);
+assign tag1_hit = (pipe_tag0 == pipe_cache_cw.address[31:8]) && (pipe_valid0 == 1'b1);
+assign hit = (tag1_hit) || (tag0_hit);
+assign write_en0_sel = {load_data[0], pipe_cache_cw.mem_read};
+assign write_en1_sel = {load_data[1], pipe_cache_cw.mem_read};
+
+always_comb begin
+	unique case (hit)
+        bus_adapter_mux::data: begin
+											if({tag1_hit, tag0_hit} == 2'b10) begin
+												mem_rdata256= pipe_data1;
+											end
+											else begin
+												mem_rdata256= pipe_data0;
+											end
+										 end
+		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = pmem_rdata;
+        default: mem_rdata256 = pmem_rdata;
+    endcase
+	 
+	 
+	/*
+	*Mux to handle race condtion on reads and writes to the same
+	*index is handled within the array
+	*can just write directly to  datain of the array
+	*/
+	unique case (set_dirty0)
+        bus_adapter_mux::mem_rdata256: datain[0] = pmem_rdata;
+		  bus_adapter_mux::mem_wdata256: datain[0] = mem_wdata256;
+        default: datain[0] = mem_rdata256;
+    endcase
+	 
+	 unique case (set_dirty1)
+	     bus_adapter_mux::mem_rdata256: datain[1] = pmem_rdata;
+	     bus_adapter_mux::mem_wdata256: datain[1] = mem_wdata256;
+		  default: datain[1] = mem_rdata256;
+    endcase
+	 
+	 unique case (write_en1_sel) //change the enumerated type names to be more descriptive
+		write_en_mux::no_read_or_load: write_en_mux_out[1] = 32'b0;
+		write_en_mux::read_no_load: write_en_mux_out[1] = 32'b0;
+		write_en_mux::load_no_read: begin
+												if(hit) begin
+													write_en_mux_out[1] = mem_byte_enable256;
+												end
+												else begin
+													write_en_mux_out[1] = 32'hFFFFFFFF;
+												end
+											 end
+		write_en_mux::load_and_read: write_en_mux_out[1] = 32'hFFFFFFFF;
+		default: write_en_mux_out[1] = 32'b0;
+	endcase
+	
+	unique case (write_en0_sel)
+		write_en_mux::no_read_or_load: write_en_mux_out[0] = 32'b0;
+		write_en_mux::read_no_load: write_en_mux_out[0] = 32'b0;
+		write_en_mux::load_no_read: begin
+												if(hit) begin
+													write_en_mux_out[0] = pipe_cache_cw.mem_byte_enable256;
+												end
+												else begin
+													write_en_mux_out[0] = 32'hFFFFFFFF;
+												end
+											 end
+		write_en_mux::load_and_read: write_en_mux_out[0] = 32'hFFFFFFFF;
+		default: write_en_mux_out[0] = 32'b0;
+	endcase
+	
+	unique case(pipe_lru)
+		dirty_mux::dirty0: dirty_ctrl = pipe_dirty0;
+		dirty_mux::dirty1: dirty_ctrl = pipe_dirty1;
+		default: dirty_ctrl = dirty_out0;
+	endcase
+	
+	unique case(lru_out)
+		mem_wdata256mux::data0: pmem_wdata = pipe_data0;
+		mem_wdata256mux::data1: pmem_wdata = pipe_data1;
+		default: pmem_wdata = pipe_data0;
+	endcase
+	
+	unique case({clear_dirty1, clear_dirty0})
+		pmem_addr_mux::mem_addr: pmem_address = pipe_cache_cw.address;
+		pmem_addr_mux::way0: pmem_address = {pipe_tag0, index, 5'b0};
+		pmem_addr_mux::way1: pmem_address = {pipe_tag1, index, 5'b0};
+	endcase
+
+end
 
 endmodule: cache_dp

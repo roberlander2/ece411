@@ -2,22 +2,23 @@ import rv32i_types::*;
 
 module arbiter_dp
 (
+			input clk,
 			input iread,
-			input [31:0] iaddress,
-			input pmem_rdata,
+			input rv32i_word iaddress,
+			input [255:0] pmem_rdata,
 			input pmem_resp,
 			input dwrite,
-			input [31:0] daddress,
-			input [31:0] wdata,
+			input rv32i_word daddress,
+			input rv32i_word wdata,
 			input dread,
 			input cache_sel,
 			output logic iresp,
-			output logic i_rdata,
+			output logic [255:0] i_rdata,
 			output logic pmem_read,
-			output logic [31:0] pmem_wdata,
-			output logic [31:0] pmem_address,
+			output logic [255:0] pmem_wdata,
+			output rv32i_word pmem_address,
 			output logic pmem_write,
-			output logic d_rdata,
+			output logic [255:0] d_rdata,
 			output logic dresp
 );
 

@@ -7,6 +7,7 @@ module datapath
 	input clk,
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
+	input load_pipeline,
 	output logic dwrite,
 	output logic iread, 
 	output logic dread,
@@ -17,7 +18,6 @@ module datapath
 );
 
 //loads
-logic load_pipeline;
 logic load_pc;
 
 logic is_jalr;
@@ -76,7 +76,6 @@ assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage
 assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
-assign load_pipeline = 1'b1; //always high until stalls are implemented
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;

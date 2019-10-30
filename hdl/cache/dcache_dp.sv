@@ -160,7 +160,7 @@ logic pipe_lru;
 data_reg pipe_DATA0(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out),
+	.write_en(write_en_mux_out[0]),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[0]),
@@ -170,7 +170,7 @@ data_reg pipe_DATA0(
 data_reg pipe_DATA1(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out),
+	.write_en(write_en_mux_out[1]),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[1]),
@@ -239,7 +239,7 @@ assign load_dirty0 = set_dirty0 || clear_dirty0;
 assign load_dirty1 = set_dirty1 | clear_dirty1;
 assign lru_in = tag0_hit;
 assign tag1_hit = (pipe_tag1 == pipe_cache_cw.address[31:8]) && (pipe_valid1 == 1'b1);
-assign tag1_hit = (pipe_tag0 == pipe_cache_cw.address[31:8]) && (pipe_valid0 == 1'b1);
+assign tag0_hit = (pipe_tag0 == pipe_cache_cw.address[31:8]) && (pipe_valid0 == 1'b1);
 assign hit = (tag1_hit) || (tag0_hit);
 assign write_en0_sel = {load_data[0], pipe_cache_cw.mem_read};
 assign write_en1_sel = {load_data[1], pipe_cache_cw.mem_read};
@@ -322,6 +322,7 @@ always_comb begin
 		pmem_addr_mux::mem_addr: pmem_address = pipe_cache_cw.address;
 		pmem_addr_mux::way0: pmem_address = {pipe_tag0, index, 5'b0};
 		pmem_addr_mux::way1: pmem_address = {pipe_tag1, index, 5'b0};
+		default: pmem_address = pipe_cache_cw.address;
 	endcase
 
 end

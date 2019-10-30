@@ -122,7 +122,7 @@ logic pipe_lru;
 data_reg pipe_DATA0(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out),
+	.write_en(write_en_mux_out[0]),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[0]),
@@ -132,7 +132,7 @@ data_reg pipe_DATA0(
 data_reg pipe_DATA1(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out),
+	.write_en(write_en_mux_out[1]),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[1]),
@@ -185,7 +185,7 @@ cache_cw_reg CW(
 //cache combinational logic and muxes -- pipeline stage 2
 assign lru_in = tag0_hit;
 assign tag1_hit = (pipe_tag1 == pipe_cache_cw.address[31:8]) && (pipe_valid1 == 1'b1);
-assign tag1_hit = (pipe_tag0 == pipe_cache_cw.address[31:8]) && (pipe_valid0 == 1'b1);
+assign tag0_hit = (pipe_tag0 == pipe_cache_cw.address[31:8]) && (pipe_valid0 == 1'b1);
 assign hit = (tag1_hit) || (tag0_hit);
 assign write_en_mux_out[0] = load_data[0] ? 32'hFFFFFFFF : 32'h0;
 assign write_en_mux_out[1] = load_data[1] ? 32'hFFFFFFFF : 32'h0;

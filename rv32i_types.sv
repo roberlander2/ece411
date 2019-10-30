@@ -100,7 +100,7 @@ typedef struct packed {
 	rv32i_word address;
 	logic mem_read;
 	logic mem_write;
-	logic [32:0] mem_byte_enable256;
+	logic [31:0] mem_byte_enable256;
 	logic [255:0] mem_wdata256;
 } cache_cw_t;
 

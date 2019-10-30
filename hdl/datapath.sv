@@ -5,8 +5,6 @@ import rv32i_types::*;
 module datapath
 (
 	input clk,
-	input iresp,
-	input dresp,
 	input rv32i_word inst, //inputted from the I-Cache
 	input rv32i_word mem_rdata,
 	output logic dwrite,

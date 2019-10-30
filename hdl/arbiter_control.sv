@@ -7,9 +7,7 @@ module arbiter_control
 			input pmem_resp,
 			input dwrite,
 			input dread,
-			output logic cache_sel,
-			output logic pmem_read,
-			output logic pmem_write
+			output logic cache_sel
 );
 
 
@@ -17,58 +15,29 @@ enum int unsigned {
 	idle, service_icache, service_dcache
 } state, next_state;
 
-function void set_defaults();
-	cache_sel = 1'b0;
-	pmem_read = 1'b0;
-	pmem_write = 1'b0;
-endfunction
-
 always_comb
 begin : state_actions
     /* Default output assignments */
-    set_defaults();
+	 cache_sel = 1'b0;;
     /* Actions for each state */
 	 unique case (state)
 		idle:		
 		begin
-			if(iread  == 1'b1) 
-			begin
-				cache_sel = 1'b0;
-				pmem_read = 1'b1;
-			end
-			else if ((dread == 1'b1 || dwrite  == 1'b1) && iread  == 1'b0) 
-			begin
-				cache_sel = 1'b1;
-				pmem_read = dread;
-				pmem_write = dwrite;
-			end
-			else set_defaults();
+			if(iread  == 1'b1) cache_sel = 1'b0;
+			else if ((dread == 1'b1 || dwrite  == 1'b1) && iread  == 1'b0) cache_sel = 1'b1;
+			else 	cache_sel = 1'b0;
 		end
 		
 		service_icache:
 		begin
-			if(pmem_resp == 1'b1 &&  (dread == 1'b1 || dwrite  == 1'b1))
-			begin
-				cache_sel = 1'b1;
-				pmem_read = dread;
-				pmem_write = dwrite;
-			end
-			else if(pmem_resp == 1'b0) pmem_read = 1'b1;
+			if(pmem_resp == 1'b1 &&  (dread == 1'b1 || dwrite  == 1'b1)) cache_sel = 1'b1;
+			else if(pmem_resp == 1'b0) cache_sel = 1'b0;
 		end
 		
 		service_dcache:
 		begin
-			if(pmem_resp == 1'b1 && iread == 1'b1)
-			begin
-				cache_sel = 1'b0;
-				pmem_read = 1'b1;
-			end
-			else if(pmem_resp == 1'b0) 
-			begin
-				cache_sel = 1'b1;
-				pmem_read = dread;
-				pmem_write = dwrite;
-			end
+			if(pmem_resp == 1'b1 && iread == 1'b1) cache_sel = 1'b0;
+			else if(pmem_resp == 1'b0) cache_sel = 1'b1;
 		end
 	endcase
 end
@@ -101,6 +70,12 @@ begin : next_state_logic
 		end
 	endcase
 end 
+
+always_ff @(posedge clk)
+begin: next_state_assignment
+    /* Assignment of next state on clock edge */
+	 state <= next_state;
+end
 
 endmodule
 

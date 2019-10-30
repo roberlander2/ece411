@@ -34,21 +34,33 @@ assign pmem_wdata = wdata;
 always_comb begin	 
 	//pmem_read mux
    unique case (cache_sel)	
-		0:	pmem_read = iread;
-		1:	pmem_read = dread;
+		1'b0:	pmem_read = iread;
+		1'b1:	pmem_read = dread;
 		default: pmem_read = iread;
 	endcase
 	//pmem_address mux
 	unique case (cache_sel)	
-		0:	pmem_address = iaddress;
-		1:	pmem_address = daddress;
+		1'b0:	pmem_address = iaddress;
+		1'b1:	pmem_address = daddress;
 		default: pmem_address = iaddress;
 	endcase
 	//1 : 2 Decoder
 	unique case (cache_sel)	
-		0:	iresp = pmem_resp;
-		1:	dresp = pmem_resp;
-		default: iresp = pmem_resp;
+		1'b0:	
+		begin
+			iresp = pmem_resp;
+			dresp = 1'b0;
+		end
+		1'b1:	
+		begin 
+			dresp = pmem_resp;
+			iresp = 1'b0;
+		end
+		default: 
+		begin
+			iresp = pmem_resp;
+			dresp = 1'b0;
+		end
 	endcase
 	
 end

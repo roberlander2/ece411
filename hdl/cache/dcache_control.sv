@@ -1,14 +1,16 @@
-module cache_control(
+import rv32i_types::*;
+
+module dcache_control(
 	input clk,
-	input logic mem_write,
-	input logic mem_read,
-	input logic pmem_resp,
-	input logic hit,
-	input logic dirty_ctrl,
-	input logic lru_out,
-	input logic tag1_hit,
-	input logic tag0_hit,
-	input cache_cw_t cache_cw,
+	input mem_write,
+	input mem_read,
+	input pmem_resp,
+	input hit,
+	input dirty_ctrl,
+	input lru_out,
+	input tag1_hit,
+	input tag0_hit,
+	input cache_cw_t pipe_cache_cw,
 	output logic pmem_read,
 	output logic pmem_write,
 	output logic mem_resp,
@@ -86,7 +88,7 @@ always_comb begin
 						next_state = load;
 				 end
 		write_data: begin
-							if(cache_cw.mem_read | cache_cw.mem_write)
+							if(pipe_cache_cw.mem_read | pipe_cache_cw.mem_write)
 								next_state = hit_detection;
 							else
 								next_state = write_data;
@@ -99,7 +101,7 @@ always_comb begin
 	//state actions
 	set_defaults();
 	unique case(state)
-		idle:	read_data = cache_cw.mem_read | cache_cw.mem_write;
+		idle:	read_data = pipe_cache_cw.mem_read | pipe_cache_cw.mem_write;
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 							load_lru = 1'b1;
 							mem_resp = 1'b1;
@@ -145,4 +147,4 @@ always_comb begin
 end
 
 
-endmodule: cache_control
+endmodule: dcache_control

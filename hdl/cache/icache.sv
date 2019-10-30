@@ -34,6 +34,7 @@ logic load_lru;
 
 logic [s_line-1:0] mem_rdata256;
 cache_cw_t pipe_cache_cw;
+cache_cw_t cache_cw;
 
 assign mem_rdata = mem_rdata256[(32*mem_address[4:2]) +: 32];
 

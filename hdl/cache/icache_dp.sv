@@ -30,7 +30,8 @@ module icache_dp #(
 	 output logic lru_out,
 	 output logic tag1_hit,
 	 output logic tag0_hit,
-	 output cache_cw_t pipe_cache_cw
+	 output cache_cw_t pipe_cache_cw,
+	 output cache_cw_t cache_cw
 );
 
 logic [s_line-1:0] datain [1:0];
@@ -47,7 +48,11 @@ logic read_high;
 logic valid_in;
 logic lru_in;
 logic pipe_read;
-cache_cw_t cache_cw;
+
+logic [s_line-1:0] data_mux_out[1:0];
+logic [s_tag-1:0] tag_mux_out [1:0];
+logic valid_mux_out1;
+logic valid_mux_out0;
 
 assign index = mem_address[7:5];
 assign tag_in = mem_address[31:8];
@@ -58,6 +63,9 @@ assign pipe_read = 1'b1;
 
 assign cache_cw.address = mem_address;
 assign cache_cw.mem_read = mem_read;
+assign cache_cw.mem_write = 1'b0;
+assign cache_cw.mem_byte_enable256 = 32'b0;
+assign cache_cw.mem_wdata256 = 256'b0;
 
 //modules
 data_array line[1:0] (
@@ -116,13 +124,12 @@ logic [s_tag-1:0] pipe_tag0;
 logic [s_tag-1:0] pipe_tag1;
 logic pipe_valid0;
 logic pipe_valid1;
-logic pipe_lru;
 
 //pipeline registers
 data_reg pipe_DATA0(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out[0]),
+	.write_en({32{load_pipeline}}),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[0]),
@@ -132,7 +139,7 @@ data_reg pipe_DATA0(
 data_reg pipe_DATA1(
 	.clk(clk),
 	.read(pipe_read & load_pipeline),
-	.write_en(write_en_mux_out[1]),
+	.write_en({32{load_pipeline}}),
 	.rindex(index),
 	.windex(cache_cw.address[7:5]),
 	.datain(data_out[1]),
@@ -165,13 +172,6 @@ register #(1) pipe_VALID1(
 	.load(load_pipeline),
 	.in(valid_out1),
 	.out(pipe_valid1)
-);
-
-register #(1) pipe_LRU(
-	.clk(clk),
-	.load(load_pipeline),
-	.in(lru_out),
-	.out(pipe_lru)
 );
 
 cache_cw_reg CW(
@@ -207,6 +207,29 @@ always_comb begin
 		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = pmem_rdata;
         default: mem_rdata256 = pmem_rdata;
     endcase
+	 
+//	 unique case (data_sel)
+//        data_sel_mux::from_array:begin
+//												data_mux_out = data_out;
+//												tag_mux_out = tag_out;
+//												valid_mux_out0 = valid_out0;
+//												valid_mux_out1 = valid_out1;
+//											end
+//		  data_sel_mux::rw_data: 	begin
+//												data_mux_out[0] = lru_out ? data_out[0] : pmem_rdata;
+//												data_mux_out[1] = lru_out ? pmem_rdata : data_out[1];
+//												tag_mux_out[0] = lru_out ? tag_out[0] : pipe_tag0;
+//												tag_mux_out[1] = lru_out ? pipe_tag1 : tag_out[1];
+//												valid_mux_out0 = lru_out ? valid_out0 : 1'b1;
+//												valid_mux_out1 = lru_out ? 1'b1 : valid_out1;
+//											end
+//        default: 						begin
+//												data_mux_out = data_out;
+//												tag_mux_out = tag_out;
+//												valid_mux_out0 = valid_out0;
+//												valid_mux_out1 = valid_out1;
+//											end
+//    endcase
 end
 
 endmodule: icache_dp

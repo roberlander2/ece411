@@ -25,18 +25,18 @@ input [s_index-1:0] windex;
 input [s_line-1:0] datain;
 output logic [s_line-1:0] dataout;
 
-logic [s_line-1:0] data [num_sets-1:0] /* synthesis ramstyle = "logic" */;
+logic [s_line-1:0] data [num_sets-1:0] = '{default: '0};
 logic [s_line-1:0] _dataout;
 assign dataout = _dataout;
 
 /* Initialize array */
-initial
-begin
-    for (int i = 0; i < num_sets; i++)
-    begin
-        data[i] = 1'b0;
-    end
-end
+//initial
+//begin
+//    for (int i = 0; i < num_sets; i++)
+//    begin
+//        data[i] = 1'b0;
+//    end
+//end
 
 always_ff @(posedge clk)
 begin

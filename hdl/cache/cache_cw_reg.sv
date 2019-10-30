@@ -1,3 +1,5 @@
+import rv32i_types::*;
+
 module cache_cw_reg
 (
     input clk,

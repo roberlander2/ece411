@@ -1,5 +1,3 @@
-import rv32i_types::*;
-
 module arbiter_control
 (
 			input clk,

@@ -47,35 +47,26 @@ end
 
 /*****************************************************************************/
 // Change inputs and outputs to match
+
 mp3 dut(
-    .clk        (itf.clk),
-    .read_a     (itf.read_a),
-    .address_a  (itf.address_a),
-    .resp_a     (itf.resp_a),
-    .rdata_a    (itf.rdata_a),
-    .read_b     (itf.read_b),
-    .write      (itf.write),
-    .wmask      (itf.wmask),
-    .address_b  (itf.address_b),
-    .wdata      (itf.wdata),
-    .resp_b     (itf.resp_b),
-    .rdata_b    (itf.rdata_b)
+    .clk          (itf.clk),
+    .pmem_resp    (itf.pmem_resp),
+    .pmem_rdata   (itf.pmem_rdata),
+    .pmem_write   (itf.pmem_write),
+    .pmem_address (itf.pmem_address),
+    .pmem_wdata   (itf.pmem_wdata),
+    .pmem_read    (itf.pmem_read),
 );
 
-// Change inputs and outputs to match
-magic_memory_dp magic_memory(
-    .clk        (itf.clk),
-    .read_a     (itf.read_a),
-    .address_a  (itf.address_a),
-    .resp_a     (itf.resp_a),
-    .rdata_a    (itf.rdata_a),
-    .read_b     (itf.read_b),
-    .write      (itf.write),
-    .wmask      (itf.wmask),
-    .address_b  (itf.address_b),
-    .wdata      (itf.wdata),
-    .resp_b     (itf.resp_b),
-    .rdata_b    (itf.rdata_b)
+memory physical_memory(
+    .clk      (itf.clk),
+    .read     (itf.pmem_read),
+    .write    (itf.pmem_write),
+    .address  (itf.pmem_address),
+    .wdata    (itf.pmem_wdata),
+    .resp     (itf.pmem_resp),
+    .error    (itf.pm_error),
+    .rdata    (itf.pmem_rdata)
 );
 
 

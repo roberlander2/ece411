@@ -38,6 +38,7 @@ function void set_defaults();
 	cw.alumux2_sel = alumux::i_imm;
 	cw.cmpmux_sel = cmpmux::rs2_out;
 	cw.regfilemux_sel = regfilemux::alu_out;
+	cw.marmux_sel = marmux::pc_out;
 	cw.load_regfile = 1'b0;
 	cw.mem_read = 1'b0;
 	cw.mem_write = 1'b0;

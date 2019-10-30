@@ -9,6 +9,7 @@ module icache_control(
 	input tag1_hit,
 	input tag0_hit,
 	input cache_cw_t pipe_cache_cw,
+	input cache_cw_t cache_cw,
 	output logic pmem_read,
 	output logic mem_resp,
 	output logic [1:0] load_data,
@@ -48,7 +49,7 @@ always_comb begin
 	//next state logic
 	unique case(state)
 		idle: begin
-					if(mem_read)
+					if(pipe_cache_cw.mem_read)
 						next_state = hit_detection;
 					else
 						next_state = idle;
@@ -74,13 +75,12 @@ always_comb begin
 	//state actions
 	set_defaults();
 	unique case(state)
-		idle:	read_data = pipe_cache_cw.mem_read;
+		idle:	read_data = cache_cw.mem_read;
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 							load_lru = 1'b1;
 							mem_resp = 1'b1;
 						end
 						else begin
-							load_pipeline  = 1'b0; //stall the pipeline
 							pmem_read = 1'b1;
 						end
 		load: if(pmem_resp) begin
@@ -90,11 +90,13 @@ always_comb begin
 					load_tag[1] = lru_out;
 					set_valid0 = ~lru_out;
 					set_valid1 = lru_out;
+					read_data = 1'b1; //cache_cw.mem_read  | cache_cw.mem_write ???
 				end
 				else begin
 					pmem_read = 1'b1;
+					load_pipeline  = 1'b0; //stall the pipeline
 				end
-		write_data: read_data = mem_read; //cache_cw.mem_read  | cache_cw.mem_write ???
+		write_data: ;
 	endcase
 end
 

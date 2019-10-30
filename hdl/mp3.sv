@@ -27,7 +27,7 @@ rv32i_word iaddress;
 rv32i_word daddress;
 logic [255:0] i_rdata;
 logic [255:0] d_rdata;
-rv32i_word wdata;
+logic [255:0] wdata;
 
 // icache and dcache
 logic icache_resp;

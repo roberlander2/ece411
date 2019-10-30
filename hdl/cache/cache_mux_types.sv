@@ -41,3 +41,10 @@ package pmem_addr_mux;
 		way1 = 2'b10
 	}pmem_addr_mux_sel_t;
 endpackage
+
+//package data_sel_mux;
+//	typedef enum bit {
+//		from_array = 1'b0,
+//		rw_data = 1'b1
+//	} data_sel_mux_sel_t;
+//endpackage

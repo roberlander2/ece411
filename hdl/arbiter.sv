@@ -9,7 +9,7 @@ module arbiter
 		input pmem_resp,
 		input dwrite,
 		input rv32i_word daddress,
-		input rv32i_word wdata,
+		input [255:0] wdata,
 		input dread,
 		output logic iresp,
 		output logic [255:0] i_rdata,

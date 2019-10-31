@@ -40,8 +40,7 @@ enum int unsigned {
 	idle,
 	hit_detection,
 	load,
-	write_data,
-	hit_after_miss
+	write_data
 } state, next_state;
 
 always_ff @(posedge clk) begin
@@ -57,20 +56,14 @@ always_comb begin
 					else
 						next_state = idle;
 				end
-		hit_detection: next_state = hit ? idle : load;
+		hit_detection: next_state = hit ? (cache_cw.mem_read ? hit_detection : idle) : load;
 		load: begin
 					if(~pmem_resp)
 						next_state = load;
 					else
 						next_state = write_data;
 				end
-		write_data: begin
-							if(pipe_cache_cw.mem_read)
-								next_state = hit_after_miss;
-							else
-								next_state = write_data;
-						end
-		hit_after_miss: next_state = idle;
+		write_data: next_state = hit_detection;
 	default: next_state = idle;
 	endcase
 end
@@ -83,7 +76,7 @@ always_comb begin
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
-								load_pipeline  = 1'b0;
+								read_data = cache_cw.mem_read;
 							end
 							else begin
 								pmem_read = 1'b1;
@@ -108,11 +101,6 @@ always_comb begin
 							read_data = 1'b1;
 							addr_sel = 1'b1;
 						end
-		hit_after_miss: begin
-									load_pipeline  = 1'b0;
-									load_lru = 1'b1;
-									mem_resp = 1'b1;
-							 end
 	endcase
 end
 

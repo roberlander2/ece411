@@ -4,7 +4,7 @@ import rv32i_types::*;
 `define HIT_100 1
 `define HIT_50 2
 `define HIT_6 3
-`define HIT_RATE `HIT_50
+`define HIT_RATE `HIT_100
 
 `define ZERO_MBE 0
 
@@ -139,6 +139,7 @@ class RandomCacheInput;
                     $display("%1b, %1b, %1b, %1b, %1b", (mem_rdata_out == dut.icache_datapath.line[0].data[set][(32*dut.icache_datapath.pipe_cache_cw.address[4:2]) +: 32]),
                             dut.icache_datapath.LRU.datain == 1'b1, dut.icache_datapath.LRU.load == 1'b1, dut.icache_datapath.LRU.windex == set,
                             dut.icache_datapath.valid0.data[set]);
+                    $display("%8h, %8h", mem_rdata_out, dut.icache_datapath.line[0].data[set][(32*dut.icache_datapath.pipe_cache_cw.address[4:2]) +: 32]);
                     $error("Failure on read hit from way 0");
                     return 0;
                 end
@@ -251,8 +252,8 @@ class RandomCacheInput;
         cache_data1 = dut.icache_datapath.line[1].data[set];
         hit0 = (dut.icache_datapath.pipe_cache_cw.address[31:8] == cache_addr0[31:8]) && dut.icache_datapath.valid0.data[set];
         hit1 = (dut.icache_datapath.pipe_cache_cw.address[31:8] == cache_addr1[31:8]) && dut.icache_datapath.valid1.data[set];
-        $display("pipe_address: %6h, cache_addr0: %6h, valid0: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr0[31:8], dut.icache_datapath.valid0.data[set], set);
-        $display("pipe_address: %6h, cache_addr1: %6h, valid1: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr1[31:8], dut.icache_datapath.valid1.data[set], set);
+        // $display("pipe_address: %6h, cache_addr0: %6h, valid0: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr0[31:8], dut.icache_datapath.valid0.data[set], set);
+        // $display("pipe_address: %6h, cache_addr1: %6h, valid1: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr1[31:8], dut.icache_datapath.valid1.data[set], set);
         hit_count--;
         return 1;
     endfunction
@@ -314,7 +315,7 @@ always_ff @(posedge itf.clk iff (test_count < `NUM_TESTS && load_pipeline_out)) 
 
     test_count <= test_count + 1;
     if (test_count + 1 == `NUM_TESTS) begin
-        $display("Finishing Cache Tests: hit rate = %0d / %0d", cpu_generator.hit_count, test_count);
+        $display("Finishing Cache Tests: hit rate = %0d / %0d", cpu_generator.hit_count, test_count + 1);
         $finish;
     end
 end

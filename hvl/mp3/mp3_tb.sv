@@ -55,7 +55,7 @@ mp3 dut(
     .pmem_write   (itf.pmem_write),
     .pmem_address (itf.pmem_address),
     .pmem_wdata   (itf.pmem_wdata),
-    .pmem_read    (itf.pmem_read),
+    .pmem_read    (itf.pmem_read)
 );
 
 memory physical_memory(

@@ -71,7 +71,7 @@ control_word_t memwb_cw;
 assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
-assign load_pc = 1'b1;
+assign load_pc = load_pipeline;
 assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
 assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;

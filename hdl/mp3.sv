@@ -77,6 +77,19 @@ icache icache(
 	.load_pipeline (iload_pipeline)
 );
 
+//icache icache(
+//	.clk				(clk),
+//	.mem_read		(iread),
+//	.pmem_resp		(pmem_resp),
+//	.pmem_rdata		(pmem_rdata),
+//	.mem_address	(inst_addr),
+//	.pmem_read		(pmem_read),
+//	.mem_resp		(icache_resp),
+//	.pmem_address	(pmem_address),
+//	.mem_rdata		(inst),
+//	.load_pipeline (load_pipeline)
+//);
+
 dcache dcache(
 	.clk					(clk),
 	.mem_write			(dwrite),

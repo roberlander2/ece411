@@ -18,7 +18,8 @@ module icache_control(
 	output logic set_valid0,
 	output logic load_lru,
 	output logic read_data,
-	output logic load_pipeline
+	output logic load_cpu_pipeline,
+	output logic load_icache_pipeline
 );
 
 function void set_defaults();
@@ -31,7 +32,8 @@ function void set_defaults();
 	set_valid0 = 1'b0;
 	mem_resp = 1'b0;
 	pmem_read = 1'b0;
-	load_pipeline = 1'b1;
+	load_cpu_pipeline = 1'b1;
+	load_icache_pipeline = 1'b1;
 endfunction
 
 enum int unsigned {
@@ -77,26 +79,31 @@ always_comb begin
 	unique case(state)
 		idle:	read_data = cache_cw.mem_read;
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
-							load_lru = 1'b1;
-							mem_resp = 1'b1;
-						end
-						else begin
-							pmem_read = 1'b1;
-						end
-		load: if(pmem_resp) begin
-					load_data[0] = ~lru_out;
-					load_tag[0] = ~lru_out;
-					load_data[1] = lru_out;
-					load_tag[1] = lru_out;
-					set_valid0 = ~lru_out;
-					set_valid1 = lru_out;
-					read_data = 1'b1; //cache_cw.mem_read  | cache_cw.mem_write ???
+								load_lru = 1'b1;
+								mem_resp = 1'b1;
+							end
+							else begin
+								pmem_read = 1'b1;
+								load_cpu_pipeline  = 1'b0;
+								load_icache_pipeline = 1'b0;
+							end
+		load: begin
+					load_cpu_pipeline  = 1'b0;
+					if(pmem_resp) begin
+						load_data[0] = ~lru_out;
+						load_tag[0] = ~lru_out;
+						load_data[1] = lru_out;
+						load_tag[1] = lru_out;
+						set_valid0 = ~lru_out;
+						set_valid1 = lru_out;
+						read_data = 1'b1; //cache_cw.mem_read  | cache_cw.mem_write ???
+					end
+					else begin
+						pmem_read = 1'b1;
+						load_icache_pipeline = 1'b0;
+					end
 				end
-				else begin
-					pmem_read = 1'b1;
-					load_pipeline  = 1'b0; //stall the pipeline
-				end
-		write_data: ;
+		write_data:	load_cpu_pipeline = 1'b0;
 	endcase
 end
 

@@ -31,12 +31,15 @@ logic set_valid0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
+logic load_cpu_pipeline;
+logic load_icache_pipeline;
 
 logic [s_line-1:0] mem_rdata256;
 cache_cw_t pipe_cache_cw;
 cache_cw_t cache_cw;
 
 assign mem_rdata = mem_rdata256[(32*mem_address[4:2]) +: 32];
+assign load_pipeline = load_cpu_pipeline;
 
 icache_control icache_ctrl (.*);
 

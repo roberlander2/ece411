@@ -8,6 +8,9 @@ import rv32i_types::*;
 
 `define ZERO_MBE 0
 
+`define NUM_TESTS 1000
+`define VERBOSE 1
+
 module random_cache_tb;
 
 timeunit 1ns;
@@ -16,6 +19,7 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
 int timeout = 100000000;   // Feel Free to adjust the timeout value
+int test_count = 0;
 
 rv32i_word mem_address_in;
 rv32i_word mem_wdata_in;
@@ -238,6 +242,16 @@ endclass
 
 RandomCacheInput cpu_generator = new();
 
+function void generate_input();
+    cpu_generator.cache_input();
+
+    mem_address_in = cpu_generator.mem_address;
+    mem_wdata_in = cpu_generator.mem_wdata;
+    mem_byte_enable_in = cpu_generator.mem_byte_enable;
+    mem_read_in = cpu_generator.mem_read;
+    mem_write_in = cpu_generator.mem_write;
+endfunction : generate_input
+
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
 always @(posedge itf.clk iff itf.pm_error) begin
@@ -256,6 +270,36 @@ end
 // Simulataneous Memory Read and Write
 always @(posedge itf.clk iff (itf.pmem_read && itf.pmem_write))
     $error("@%0t TOP: Simultaneous memory read and write detected", $time);
+
+always_ff @(negedge itf.clk iff dut.icache_ctrl.state.name == "write_data") begin
+    if (!cpu_generator.check_miss_correct()) begin
+      $error("A cache correctness error occurred on a miss");
+      $finish;
+    end
+end
+
+always_ff @(negedge itf.clk iff mem_resp_out) begin
+    mem_read_in = 1'b0;
+    mem_write_in = 1'b0;
+    if (!cpu_generator.check_hit_correct()) begin
+        $error("A cache correctness error occurred on a hit");
+        $finish;
+    end
+end
+
+always_ff @(posedge itf.clk iff (test_count < `NUM_TESTS && load_pipeline_out)) begin
+    generate_input();
+
+    if (`VERBOSE)
+        $display("Testing stimulus: mem_address = 0x%8h, mem_read = %1b, mem_write = %1b, mem_wdata = 0x%8h, mem_byte_enable = %4b",
+            cpu_generator.mem_address, cpu_generator.mem_read, cpu_generator.mem_write, cpu_generator.mem_wdata, cpu_generator.mem_byte_enable);
+
+    test_count <= test_count + 1;
+    if (test_count + 1 == `NUM_TESTS) begin
+        $display("Finishing Cache Tests: hit rate = %0d / %0d", cpu_generator.hit_count, test_count);
+        $finish;
+    end
+end
 
 /*****************************************************************************/
 icache dut(
@@ -301,45 +345,45 @@ pmem_random_cache_tb memory(
     .error   (itf.pm_error)
 );
 
-task cache_tests(input int count, input logic verbose = 1'b0);
-    $display("Starting Cache Tests");
-    repeat (count) begin
-        cpu_generator.cache_input();
-
-        mem_address_in = cpu_generator.mem_address;
-        mem_wdata_in = cpu_generator.mem_wdata;
-        mem_byte_enable_in = cpu_generator.mem_byte_enable;
-        mem_read_in = cpu_generator.mem_read;
-        mem_write_in = cpu_generator.mem_write;
-
-        if (verbose)
-            $display("Testing stimulus: mem_address = 0x%8h, mem_read = %1b, mem_write = %1b, mem_wdata = 0x%8h, mem_byte_enable = %4b",
-                cpu_generator.mem_address, cpu_generator.mem_read, cpu_generator.mem_write, cpu_generator.mem_wdata, cpu_generator.mem_byte_enable);
-
-        if (!(cpu_generator.hit0 || cpu_generator.hit1)) begin
-            repeat (2) @(posedge itf.clk);
-            @(negedge itf.clk iff dut.icache_ctrl.state.name == "write_data");
-            if (!cpu_generator.check_miss_correct()) begin
-              $error("A cache correctness error occurred on a miss");
-              $finish;
-            end
-        end
-        @(negedge itf.clk iff mem_resp_out);
-        mem_read_in = 1'b0;
-        mem_write_in = 1'b0;
-        repeat (2) @(posedge itf.clk);
-        if (!cpu_generator.check_hit_correct()) begin
-            $error("A cache correctness error occurred on a hit");
-            $finish;
-        end
-        repeat (2) @(posedge itf.clk);
-    end
-    $display("Finishing Cache Tests: hit rate = %0d / %0d", cpu_generator.hit_count, count);
-endtask
-
-initial begin
-    cache_tests(1000, 1'b1);
-    $finish;
-end
+// task cache_tests(input int count, input logic verbose = 1'b0);
+//     $display("Starting Cache Tests");
+//     repeat (count) begin
+//         cpu_generator.cache_input();
+//
+//         mem_address_in = cpu_generator.mem_address;
+//         mem_wdata_in = cpu_generator.mem_wdata;
+//         mem_byte_enable_in = cpu_generator.mem_byte_enable;
+//         mem_read_in = cpu_generator.mem_read;
+//         mem_write_in = cpu_generator.mem_write;
+//
+//         if (verbose)
+//             $display("Testing stimulus: mem_address = 0x%8h, mem_read = %1b, mem_write = %1b, mem_wdata = 0x%8h, mem_byte_enable = %4b",
+//                 cpu_generator.mem_address, cpu_generator.mem_read, cpu_generator.mem_write, cpu_generator.mem_wdata, cpu_generator.mem_byte_enable);
+//
+//         if (!(cpu_generator.hit0 || cpu_generator.hit1)) begin
+//             repeat (2) @(posedge itf.clk);
+//             @(negedge itf.clk iff dut.icache_ctrl.state.name == "write_data");
+//             if (!cpu_generator.check_miss_correct()) begin
+//               $error("A cache correctness error occurred on a miss");
+//               $finish;
+//             end
+//         end
+//         @(negedge itf.clk iff mem_resp_out);
+//         mem_read_in = 1'b0;
+//         mem_write_in = 1'b0;
+//         repeat (2) @(posedge itf.clk);
+//         if (!cpu_generator.check_hit_correct()) begin
+//             $error("A cache correctness error occurred on a hit");
+//             $finish;
+//         end
+//         repeat (2) @(posedge itf.clk);
+//     end
+//     $display("Finishing Cache Tests: hit rate = %0d / %0d", cpu_generator.hit_count, count);
+// endtask
+//
+// initial begin
+//     cache_tests(1000, 1'b1);
+//     $finish;
+// end
 
 endmodule : random_cache_tb

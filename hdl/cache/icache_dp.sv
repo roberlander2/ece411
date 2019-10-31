@@ -23,7 +23,8 @@ module icache_dp #(
 	 input set_valid0,
 	 input mem_read,
 	 input read_data,
-	 input load_pipeline,
+	 input load_icache_pipeline,
+	 input load_cpu_pipeline,
 	 output logic [s_line-1:0] mem_rdata256,
 	 output rv32i_word pmem_address,
 	 output logic hit,
@@ -47,7 +48,7 @@ logic [2:0] index;
 logic read_high;
 logic valid_in;
 logic lru_in;
-logic pipe_read;
+//logic pipe_read;
 
 logic [s_line-1:0] data_mux_out[1:0];
 logic [s_tag-1:0] tag_mux_out [1:0];
@@ -59,7 +60,7 @@ assign tag_in = mem_address[31:8];
 assign read_high = 1'b1;
 assign valid_in = 1'b1;
 
-assign pipe_read = 1'b1;
+//assign pipe_read = 1'b1;
 
 assign cache_cw.address = mem_address;
 assign cache_cw.mem_read = mem_read;
@@ -126,57 +127,51 @@ logic pipe_valid0;
 logic pipe_valid1;
 
 //pipeline registers
-data_reg pipe_DATA0(
+register #(s_line) pipe_DATA0(
 	.clk(clk),
-	.read(pipe_read & load_pipeline),
-	.write_en({32{load_pipeline}}),
-	.rindex(index),
-	.windex(cache_cw.address[7:5]),
-	.datain(data_out[0]),
-	.dataout(pipe_data0)
+	.load(load_icache_pipeline),
+	.in(data_out[0]),
+	.out(pipe_data0)
 );
 
-data_reg pipe_DATA1(
+register #(s_line) pipe_DATA1(
 	.clk(clk),
-	.read(pipe_read & load_pipeline),
-	.write_en({32{load_pipeline}}),
-	.rindex(index),
-	.windex(cache_cw.address[7:5]),
-	.datain(data_out[1]),
-	.dataout(pipe_data1)
+	.load(load_icache_pipeline),
+	.in(data_out[1]),
+	.out(pipe_data1)
 );
 
 register #(s_tag) pipe_TAG0(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_icache_pipeline),
 	.in(tag_out[0]),
 	.out(pipe_tag0)
 );
 
 register #(s_tag) pipe_TAG1(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_icache_pipeline),
 	.in(tag_out[1]),
 	.out(pipe_tag1)
 );
 
 register #(1) pipe_VALID0(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_icache_pipeline),
 	.in(valid_out0),
 	.out(pipe_valid0)
 );
 
 register #(1) pipe_VALID1(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_icache_pipeline),
 	.in(valid_out1),
 	.out(pipe_valid1)
 );
 
 cache_cw_reg CW(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_cpu_pipeline),
 	.in(cache_cw),
 	.out(pipe_cache_cw)
 );

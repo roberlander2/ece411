@@ -18,8 +18,8 @@ module icache_control(
 	output logic set_valid0,
 	output logic load_lru,
 	output logic read_data,
-	output logic load_cpu_pipeline,
-	output logic load_icache_pipeline
+	output logic load_pipeline,
+	output logic addr_sel
 );
 
 function void set_defaults();
@@ -32,15 +32,16 @@ function void set_defaults();
 	set_valid0 = 1'b0;
 	mem_resp = 1'b0;
 	pmem_read = 1'b0;
-	load_cpu_pipeline = 1'b1;
-	load_icache_pipeline = 1'b1;
+	load_pipeline = 1'b1;
+	addr_sel = 1'b0;
 endfunction
 
 enum int unsigned {
 	idle,
 	hit_detection,
 	load,
-	write_data
+	write_data,
+	hit_after_miss
 } state, next_state;
 
 always_ff @(posedge clk) begin
@@ -51,7 +52,7 @@ always_comb begin
 	//next state logic
 	unique case(state)
 		idle: begin
-					if(pipe_cache_cw.mem_read)
+					if(cache_cw.mem_read)
 						next_state = hit_detection;
 					else
 						next_state = idle;
@@ -65,10 +66,11 @@ always_comb begin
 				end
 		write_data: begin
 							if(pipe_cache_cw.mem_read)
-								next_state = hit_detection;
+								next_state = hit_after_miss;
 							else
 								next_state = write_data;
 						end
+		hit_after_miss: next_state = idle;
 	default: next_state = idle;
 	endcase
 end
@@ -81,14 +83,14 @@ always_comb begin
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
+								load_pipeline  = 1'b0;
 							end
 							else begin
 								pmem_read = 1'b1;
-								load_cpu_pipeline  = 1'b0;
-								load_icache_pipeline = 1'b0;
+								load_pipeline  = 1'b0;
 							end
 		load: begin
-					load_cpu_pipeline  = 1'b0;
+					load_pipeline  = 1'b0;
 					if(pmem_resp) begin
 						load_data[0] = ~lru_out;
 						load_tag[0] = ~lru_out;
@@ -96,14 +98,21 @@ always_comb begin
 						load_tag[1] = lru_out;
 						set_valid0 = ~lru_out;
 						set_valid1 = lru_out;
-						read_data = 1'b1; //cache_cw.mem_read  | cache_cw.mem_write ???
 					end
 					else begin
 						pmem_read = 1'b1;
-						load_icache_pipeline = 1'b0;
 					end
 				end
-		write_data:	load_cpu_pipeline = 1'b0;
+		write_data:	begin
+							load_pipeline = 1'b0;
+							read_data = 1'b1;
+							addr_sel = 1'b1;
+						end
+		hit_after_miss: begin
+									load_pipeline  = 1'b0;
+									load_lru = 1'b1;
+									mem_resp = 1'b1;
+							 end
 	endcase
 end
 

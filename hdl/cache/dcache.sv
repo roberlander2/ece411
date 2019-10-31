@@ -41,6 +41,7 @@ logic clear_dirty0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
+logic addr_sel;
 
 logic [s_line-1:0] mem_wdata256;
 logic [s_line-1:0] mem_rdata256;
@@ -48,9 +49,10 @@ logic [s_mask-1:0] mem_byte_enable256;
 rv32i_word resp_address;
 rv32i_word address;
 cache_cw_t pipe_cache_cw;
+cache_cw_t cache_cw;
 
-assign resp_address = mem_address;
-assign address = mem_address;
+assign resp_address = pipe_cache_cw.address;
+assign address = pipe_cache_cw.address;
 
 dcache_control dcache_ctrl (.*);
 

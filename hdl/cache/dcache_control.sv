@@ -11,6 +11,7 @@ module dcache_control(
 	input tag1_hit,
 	input tag0_hit,
 	input cache_cw_t pipe_cache_cw,
+	input cache_cw_t cache_cw,
 	output logic pmem_read,
 	output logic pmem_write,
 	output logic mem_resp,
@@ -24,7 +25,8 @@ module dcache_control(
 	output logic set_valid0,
 	output logic load_lru,
 	output logic read_data,
-	output logic load_pipeline
+	output logic load_pipeline,
+	output logic addr_sel
 );
 
 function void set_defaults();
@@ -32,7 +34,6 @@ function void set_defaults();
 	read_data = 1'b0;
 	load_data = 2'b0;
 	load_tag = 2'b0;
-	load_data = 2'b0;
 	set_valid1 = 1'b0;
 	set_valid0 = 1'b0;
 	set_dirty0 = 1'b0;
@@ -43,6 +44,7 @@ function void set_defaults();
 	pmem_read = 1'b0;
 	pmem_write = 1'b0;
 	load_pipeline = 1'b1;
+	addr_sel = 1'b0;
 endfunction
 
 enum int unsigned {
@@ -60,39 +62,11 @@ end
 always_comb begin
 	//next state logic
 	unique case(state)
-		idle: begin
-					if(mem_read | mem_write)
-						next_state = hit_detection;
-					else
-						next_state = idle;
-				end
-		hit_detection: begin	//combine into mux? with  select  {hit,miss,dirty}
-								if(hit)
-									next_state = idle;
-								else
-									unique case(dirty_ctrl)
-										1'b0: next_state = load;
-										1'b1: next_state = store;
-									endcase
-							end 
-		load: begin
-					if(~pmem_resp)
-						next_state = load;
-					else
-						next_state = write_data;
-				end
-		store: begin
-					if(~pmem_resp)
-						next_state = store;
-					else
-						next_state = load;
-				 end
-		write_data: begin
-							if(pipe_cache_cw.mem_read | pipe_cache_cw.mem_write)
-								next_state = hit_detection;
-							else
-								next_state = write_data;
-						end
+		idle: next_state = (cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle;
+		hit_detection: next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
+		load: next_state = pmem_resp ? write_data : load;
+		store: next_state = pmem_resp ? load : store;
+		write_data: next_state = hit_detection;
 	default: next_state = idle;
 	endcase
 end
@@ -101,48 +75,59 @@ always_comb begin
 	//state actions
 	set_defaults();
 	unique case(state)
-		idle:	read_data = pipe_cache_cw.mem_read | pipe_cache_cw.mem_write;
+		idle:	read_data = cache_cw.mem_read | cache_cw.mem_write;
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
-							load_lru = 1'b1;
-							mem_resp = 1'b1;
-							if(mem_write) begin
-								load_data[0] = tag0_hit;
-								load_data[1] = tag1_hit;
-								set_dirty0 = tag0_hit;
-								set_dirty1 = tag1_hit;
-							end
-						end
-						else begin
-							load_pipeline  = 1'b0; //stall the pipeline
-							if(dirty_ctrl) begin
-								pmem_write = 1'b1;
-								clear_dirty0 = ~lru_out;
-								clear_dirty1 = lru_out;
+								load_lru = 1'b1;
+								mem_resp = 1'b1;
+								read_data = cache_cw.mem_read | cache_cw.mem_write;
+								if(mem_write) begin
+									load_data[0] = tag0_hit;
+									load_data[1] = tag1_hit;
+									set_dirty0 = tag0_hit;
+									set_dirty1 = tag1_hit;
+								end
 							end
 							else begin
-								pmem_read = 1'b1;
+								load_pipeline  = 1'b0; //stall the pipeline
+								if(dirty_ctrl) begin
+									pmem_write = 1'b1;
+									clear_dirty0 = ~lru_out;
+									clear_dirty1 = lru_out;
+								end
+								else begin
+									pmem_read = 1'b1;
+								end
 							end
+		load: begin
+					load_pipeline  = 1'b0;
+					if(pmem_resp) begin
+						load_data[0] = ~lru_out;
+						load_data[1] = lru_out;
+						load_tag[0] = ~lru_out;
+						load_tag[1] = lru_out;
+						set_valid0 = ~lru_out;
+						set_valid1 = lru_out;
+					end
+					else begin
+						pmem_read = 1'b1;
+					end
+				end
+		store:	begin
+						load_pipeline  = 1'b0;
+						if(pmem_resp) begin
+							pmem_read = 1'b1;
 						end
-		load: if(pmem_resp) begin
-					load_data[0] = ~lru_out;
-					load_tag[0] = ~lru_out;
-					load_data[1] = lru_out;
-					load_tag[1] = lru_out;
-					set_valid0 = ~lru_out;
-					set_valid1 = lru_out;
-				end
-				else begin
-					pmem_read = 1'b1;
-				end
-		store: if(pmem_resp) begin
-					pmem_read = 1'b1;
-				end
-				else begin
-					pmem_write = 1'b1;
-					clear_dirty0 = ~lru_out;
-					clear_dirty1 = lru_out;
-				end
-		write_data: read_data = mem_read | mem_write; //cache_cw.mem_read  | cache_cw.mem_write ???
+						else begin
+							pmem_write = 1'b1;
+							clear_dirty0 = ~lru_out;
+							clear_dirty1 = lru_out;
+						end
+					end
+		write_data:	begin
+							load_pipeline = 1'b0;
+							read_data = 1'b1;
+							addr_sel = 1'b1;
+						end
 	endcase
 end
 

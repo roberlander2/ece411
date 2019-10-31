@@ -1,8 +1,4 @@
 import rv32i_types::*;
-import write_en_mux::*;
-import dirty_mux::*;
-import mem_wdata256mux::*;
-import pmem_addr_mux::*;
 import bus_adapter_mux::*;
 
 module icache_dp #(

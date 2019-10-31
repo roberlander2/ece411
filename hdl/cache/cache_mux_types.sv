@@ -12,10 +12,8 @@ endpackage
 
 package write_en_mux;
 	typedef enum logic [1:0] {
-		no_read_or_load = 2'b00,
-		read_no_load = 2'b01,
-		load_no_read = 2'b10,
-		load_and_read  = 2'b11
+		load_no_hit = 2'b10,
+		load_and_hit = 2'b11
 	} write_en_sel_t;
 	
 endpackage
@@ -41,10 +39,3 @@ package pmem_addr_mux;
 		way1 = 2'b10
 	}pmem_addr_mux_sel_t;
 endpackage
-
-//package data_sel_mux;
-//	typedef enum bit {
-//		from_array = 1'b0,
-//		rw_data = 1'b1
-//	} data_sel_mux_sel_t;
-//endpackage

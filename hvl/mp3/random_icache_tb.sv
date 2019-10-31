@@ -11,7 +11,7 @@ import rv32i_types::*;
 `define NUM_TESTS 1000
 `define VERBOSE 1
 
-module random_cache_tb;
+module random_icache_tb;
 
 timeunit 1ns;
 timeprecision 1ns;
@@ -76,7 +76,7 @@ class RandomCacheInput;
     function void cache_input(
         const ref logic [3:0] cpu_mbe_range[$] = mbe_range
     );
-        mem_read = 1'b1;    // $urandom();
+        mem_read = 1'b1;
         mem_write = ~mem_read;
 
         mem_address = $urandom();
@@ -104,16 +104,12 @@ class RandomCacheInput;
             mem_address[0] = 1'b0;
 
         // set immediate value
-
         set = mem_address[7:5];
 
         cache_addr0 = {dut.icache_datapath.tag[0].data[set], set, 5'b0};
         cache_addr1 = {dut.icache_datapath.tag[1].data[set], set, 5'b0};
         cache_data0 = dut.icache_datapath.line[0].data[set];
         cache_data1 = dut.icache_datapath.line[1].data[set];
-
-        // dirty0 = dut.dcache_datapath.dirty0.data[set];
-        // dirty1 = dut.dcache_datapath.dirty1.data[set];
 
         hit0 = (dut.icache_datapath.pipe_cache_cw.address[31:8] == cache_addr0[31:8]) && dut.icache_datapath.valid0.data[set];
         hit1 = (dut.icache_datapath.pipe_cache_cw.address[31:8] == cache_addr1[31:8]) && dut.icache_datapath.valid1.data[set];
@@ -156,30 +152,6 @@ class RandomCacheInput;
                     return 0;
                 end
         end
-        // else if (hit0 && mem_write) begin
-        //     new_data = cache_data0;
-        //     for (int i = 0; i < 32; i++) begin
-        //     		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
-        //     end
-        //     assert((dut.icache_datapath.line[0].data[set] == new_data) &&
-        //             dut.icache_datapath.LRU.data[set] == 1'b1 && dut.icache_datapath.dirty0.data[set] && dut.icache_datapath.valid0.data[set])
-        //         else begin
-        //             $error("Failure on write hit to way 0");
-        //             return 0;
-        //         end
-        // end
-        // else if (hit1 && mem_write) begin
-        //     new_data = cache_data1;
-        //     for (int i = 0; i < 32; i++) begin
-        //     		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
-        //     end
-        //     assert((dut.icache_datapath.line[1].data[set] == new_data) &&
-        //             dut.icache_datapath.LRU.data[set] == 1'b0 && dut.icache_datapath.dirty1.data[set] && dut.icache_datapath.valid1.data[set])
-        //         else begin
-        //             $error("Failure on write hit to way 1");
-        //             return 0;
-        //         end
-        // end
         else begin
             $display("A testbench error has likely occurred - check that mem_read and mem_write are correct: %1b %1b %1b", hit0, hit1, dut.icache_datapath.pipe_cache_cw.mem_read);
             return 0;
@@ -191,60 +163,24 @@ class RandomCacheInput;
         set = dut.icache_datapath.pipe_cache_cw.address[7:5];
         lru_out = dut.icache_datapath.LRU.data[set];
         if (!lru_out) begin
-            // if (dirty0) begin
-            //     assert((dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]) &&
-            //            (dut.icache_datapath.tag[0].data[set] == mem_address[31:8]) &&
-            //            (memory.mem[cache_addr0[26:5]] == cache_data0) && dut.icache_datapath.valid0.data[set])
-            //         else begin
-            //           $display("data = %64h, memory = %64h at internal address %6h", dut.icache_datapath.line[0].data[set], memory.mem[memory.internal_address], memory.internal_address);
-            //           $display("tag = %6h, mem_address_tag = %6h", dut.icache_datapath.tag[0].data[set], mem_address[31:8]);
-            //           $display("old data = %64h, old address = %8h, memory = %64h at internal address %6h", cache_data0, cache_addr0, memory.mem[cache_addr0[26:5]], cache_addr0[26:5]);
-            //           $display("valid = %1b", dut.icache_datapath.valid0.data[set]);
-            //           $display("%1b, %1b, %1b, %1b", (dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]),
-            //                  (dut.icache_datapath.tag[0].data[set] == mem_address[31:8]),
-            //                  (memory.mem[cache_addr0[26:5]] == cache_data0), dut.icache_datapath.valid0.data[set]);
-            //           $error("Failure on cache miss into dirty way 0");
-            //           return 0;
-            //         end
-            // end
-            // else begin
-                assert((dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]) &&
-                       (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid0.data[set])
-                    else begin
-                      $display("%1b, %1b, %1b", (dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]),
-                             (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid0.data[set]);
-                      $error("Failure on cache miss into way 0");
-                      return 0;
-                    end
-            // end
+            assert((dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]) &&
+                   (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid0.data[set])
+                else begin
+                  $display("%1b, %1b, %1b", (dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]),
+                         (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid0.data[set]);
+                  $error("Failure on cache miss into way 0");
+                  return 0;
+                end
         end
         else if (lru_out) begin
-            // if (dirty1) begin
-            //     assert((dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]) &&
-            //            (dut.icache_datapath.tag[1].data[set] == mem_address[31:8]) &&
-            //            (memory.mem[cache_addr1[26:5]] == cache_data1) && dut.icache_datapath.valid1.data[set])
-            //         else begin
-            //           $display("data = %64h, memory = %64h at internal address %6h", dut.icache_datapath.line[1].data[set], memory.mem[memory.internal_address], memory.internal_address);
-            //           $display("tag = %6h, mem_address_tag = %6h", dut.icache_datapath.tag[1].data[set], mem_address[31:8]);
-            //           $display("old data = %64h, old address = %8h, memory = %64h at internal address %6h", cache_data1, cache_addr1, memory.mem[cache_addr1[26:5]], cache_addr1[26:5]);
-            //           $display("valid = %1b", dut.icache_datapath.valid1.data[set]);
-            //           $display("%1b, %1b, %1b, %1b", (dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]),
-            //                  (dut.icache_datapath.tag[1].data[set] == mem_address[31:8]),
-            //                  (memory.mem[cache_addr1[26:5]] == cache_data1), dut.icache_datapath.valid1.data[set]);
-            //           $error("Failure on cache miss into dirty way 1");
-            //           return 0;
-            //         end
-            // end
-            // else begin
-                assert((dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]) &&
-                       (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid1.data[set])
-                    else begin
-                      $display("%1b, %1b, %1b", (dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]),
-                             (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid1.data[set]);
-                      $error("Failure on cache miss into way 1");
-                      return 0;
-                    end
-            // end
+            assert((dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]) &&
+                   (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid1.data[set])
+                else begin
+                  $display("%1b, %1b, %1b", (dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]),
+                         (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid1.data[set]);
+                  $error("Failure on cache miss into way 1");
+                  return 0;
+                end
         end
         cache_addr0 = {dut.icache_datapath.tag[0].data[set], set, 5'b0};
         cache_addr1 = {dut.icache_datapath.tag[1].data[set], set, 5'b0};
@@ -298,8 +234,6 @@ always_ff @(negedge itf.clk iff dut.icache_ctrl.state.name == "write_data") begi
 end
 
 always_ff @(negedge itf.clk iff mem_resp_out) begin
-    // mem_read_in = 1'b0;
-    // mem_write_in = 1'b0;
     if (!cpu_generator.check_hit_correct()) begin
         $error("A cache correctness error occurred on a hit");
         $finish;
@@ -334,24 +268,6 @@ icache dut(
     .pmem_address     (itf.pmem_address),
     .load_pipeline    (load_pipeline_out)
 );
-
-// dcache dut(
-// 	  .clk               (itf.clk),
-//   	.mem_write         (mem_write_in),
-//   	.mem_read          (mem_read_in),
-//   	.pmem_resp         (itf.pmem_resp),
-//   	.pmem_rdata        (itf.pmem_rdata),
-//   	.mem_wdata         (mem_wdata_in),
-//   	.mem_address       (mem_address_in),
-//   	.mem_byte_enable   (mem_byte_enable_in),
-//   	.pmem_read         (itf.pmem_read),
-//   	.pmem_write        (itf.pmem_write),
-//   	.mem_resp          (mem_resp_out),
-//   	.pmem_wdata        (itf.pmem_wdata),
-//   	.pmem_address      (itf.pmem_address),
-//   	.mem_rdata         (itf.pmem_rdata),
-//   	.load_pipeline     (load_pipeline_out)
-// );
 
 pmem_random_cache_tb memory(
     .clk     (itf.clk),
@@ -405,4 +321,4 @@ pmem_random_cache_tb memory(
 //     $finish;
 // end
 
-endmodule : random_cache_tb
+endmodule : random_icache_tb

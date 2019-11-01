@@ -8,9 +8,9 @@ import rv32i_types::*;
 
 `define ZERO_MBE 0
 
-`define NUM_TESTS 1000
+`define NUM_TESTS 100000
 `define VERBOSE 1
-`define ONLY_READ 1
+`define ONLY_READ 0
 
 module random_dcache_tb;
 
@@ -139,8 +139,8 @@ class RandomCacheInput;
         hit1 = (dut.dcache_datapath.pipe_cache_cw.address[31:8] == cache_addr1[31:8]) && dut.dcache_datapath.valid1.data[set];
         dirty0 = dut.dcache_datapath.dirty0.data[set];
         dirty1 = dut.dcache_datapath.dirty1.data[set];
-        mem_wdata256 = dut.dcache_datapath.pipe_cache_cw.mem_wdata256;
-        mem_byte_enable256 = dut.dcache_datapath.pipe_cache_cw.mem_byte_enable256 << (dut.dcache_datapath.pipe_cache_cw.address[4:2]*4);
+        mem_wdata256 = {8{dut.dcache_datapath.pipe_cache_cw.mem_wdata}};
+        mem_byte_enable256 = {28'h0, dut.dcache_datapath.pipe_cache_cw.mem_byte_enable} << (dut.dcache_datapath.pipe_cache_cw.address[4:2]*4);
         if (hit0 && dut.dcache_datapath.pipe_cache_cw.mem_read) begin
             assert((mem_rdata_out == dut.dcache_datapath.line[0].data[set][(32*dut.dcache_datapath.pipe_cache_cw.address[4:2]) +: 32]) &&
                     dut.dcache_datapath.LRU.datain == 1'b1 && dut.dcache_datapath.LRU.load == 1'b1 && dut.dcache_datapath.LRU.windex == set &&
@@ -166,32 +166,45 @@ class RandomCacheInput;
                     return 0;
                 end
         end
-        else if (hit0 && mem_write) begin
-            new_data = cache_data0;
-            for (int i = 0; i < 32; i++) begin
-            		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
-            end
-            assert((dut.dcache_datapath.line[0].data[set] == new_data) &&
-                    dut.dcache_datapath.LRU.data[set] == 1'b1 && dut.dcache_datapath.dirty0.data[set] && dut.dcache_datapath.valid0.data[set])
+        else if (hit0 && dut.dcache_datapath.pipe_cache_cw.mem_write) begin
+            // new_data = cache_data0;
+            // for (int i = 0; i < 32; i++) begin
+            // 		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
+            // end
+            assert((dut.dcache_datapath.line[0].datain == mem_wdata256) && (dut.dcache_datapath.line[0].write_en == mem_byte_enable256) &&
+                    dut.dcache_datapath.LRU.datain == 1'b1 && dut.dcache_datapath.LRU.load == 1'b1 && dut.dcache_datapath.LRU.windex == set &&
+                    dut.dcache_datapath.dirty0.datain == 1'b1 && dut.dcache_datapath.dirty0.load == 1'b1 && dut.dcache_datapath.dirty0.windex == set &&
+                    dut.dcache_datapath.valid0.data[set])
                 else begin
+                    $display("%1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b", (dut.dcache_datapath.line[0].datain == mem_wdata256), (dut.dcache_datapath.line[0].write_en == mem_byte_enable256),
+                          dut.dcache_datapath.LRU.datain == 1'b1, dut.dcache_datapath.LRU.load == 1'b1, dut.dcache_datapath.LRU.windex == set,
+                          dut.dcache_datapath.dirty0.datain == 1'b1, dut.dcache_datapath.dirty0.load == 1'b1, dut.dcache_datapath.dirty0.windex == set,
+                          dut.dcache_datapath.valid0.data[set]);
                     $error("Failure on write hit to way 0");
                     return 0;
                 end
         end
-        else if (hit1 && mem_write) begin
-            new_data = cache_data1;
-            for (int i = 0; i < 32; i++) begin
-            		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
-            end
-            assert((dut.dcache_datapath.line[1].data[set] == new_data) &&
-                    dut.dcache_datapath.LRU.data[set] == 1'b0 && dut.dcache_datapath.dirty1.data[set] && dut.dcache_datapath.valid1.data[set])
+        else if (hit1 && dut.dcache_datapath.pipe_cache_cw.mem_write) begin
+            // new_data = cache_data1;
+            // for (int i = 0; i < 32; i++) begin
+            // 		new_data[8*i +: 8] = mem_byte_enable256[i] ? mem_wdata256[8*i +: 8] : new_data[8*i +: 8];
+            // end
+            assert((dut.dcache_datapath.line[1].datain == mem_wdata256) && (dut.dcache_datapath.line[1].write_en == mem_byte_enable256) &&
+                    dut.dcache_datapath.LRU.datain == 1'b0 && dut.dcache_datapath.LRU.load == 1'b1 && dut.dcache_datapath.LRU.windex == set &&
+                    dut.dcache_datapath.dirty1.datain == 1'b1 && dut.dcache_datapath.dirty1.load == 1'b1 && dut.dcache_datapath.dirty1.windex == set &&
+                    dut.dcache_datapath.valid1.data[set])
                 else begin
+                    $display("%1b, %1b, %1b, %1b, %1b, %1b, %1b", (dut.dcache_datapath.line[1].datain == mem_wdata256), (dut.dcache_datapath.line[1].write_en == mem_byte_enable256),
+                          dut.dcache_datapath.LRU.datain == 1'b0, dut.dcache_datapath.LRU.load == 1'b1, dut.dcache_datapath.LRU.windex == set,
+                          dut.dcache_datapath.dirty1.datain == 1'b1, dut.dcache_datapath.dirty1.load == 1'b1, dut.dcache_datapath.dirty1.windex == set,
+                          dut.dcache_datapath.valid1.data[set]);
                     $error("Failure on write hit to way 1");
                     return 0;
                 end
         end
         else begin
-            $display("A testbench error has likely occurred - check that mem_read and mem_write are correct: %1b %1b %1b", hit0, hit1, dut.dcache_datapath.pipe_cache_cw.mem_read);
+            $display("A testbench error has likely occurred - check that mem_read and mem_write are correct: %1b %1b %1b %1b", hit0, hit1,
+            dut.dcache_datapath.pipe_cache_cw.mem_read, dut.dcache_datapath.pipe_cache_cw.mem_write);
             return 0;
         end
         return 1;
@@ -204,8 +217,8 @@ class RandomCacheInput;
         dirty1 = dut.dcache_datapath.dirty1.data[set];
         cache_data0 = dut.dcache_datapath.line[0].data[set];
         cache_data1 = dut.dcache_datapath.line[1].data[set];
-        mem_wdata256 = dut.dcache_datapath.pipe_cache_cw.mem_wdata256;
-        mem_byte_enable256 = dut.dcache_datapath.pipe_cache_cw.mem_byte_enable256 << (dut.dcache_datapath.pipe_cache_cw.address[4:2]*4);
+        mem_wdata256 = {8{dut.dcache_datapath.pipe_cache_cw.mem_wdata}};
+        mem_byte_enable256 = {28'h0, dut.dcache_datapath.pipe_cache_cw.mem_byte_enable} << (dut.dcache_datapath.pipe_cache_cw.address[4:2]*4);
         if (!lru_out) begin
             if (dirty0) begin
                 assert((dut.dcache_datapath.line[0].data[set] == memory.mem[memory.internal_address]) &&
@@ -268,8 +281,8 @@ class RandomCacheInput;
         cache_data1 = dut.dcache_datapath.line[1].data[set];
         hit0 = (dut.dcache_datapath.pipe_cache_cw.address[31:8] == cache_addr0[31:8]) && dut.dcache_datapath.valid0.data[set];
         hit1 = (dut.dcache_datapath.pipe_cache_cw.address[31:8] == cache_addr1[31:8]) && dut.dcache_datapath.valid1.data[set];
-        $display("pipe_address: %6h, cache_addr0: %6h, valid0: %1b, set: %1h", dut.dcache_datapath.pipe_cache_cw.address[31:8], cache_addr0[31:8], dut.dcache_datapath.valid0.data[set], set);
-        $display("pipe_address: %6h, cache_addr1: %6h, valid1: %1b, set: %1h", dut.dcache_datapath.pipe_cache_cw.address[31:8], cache_addr1[31:8], dut.dcache_datapath.valid1.data[set], set);
+        // $display("pipe_address: %6h, cache_addr0: %6h, valid0: %1b, set: %1h", dut.dcache_datapath.pipe_cache_cw.address[31:8], cache_addr0[31:8], dut.dcache_datapath.valid0.data[set], set);
+        // $display("pipe_address: %6h, cache_addr1: %6h, valid1: %1b, set: %1h", dut.dcache_datapath.pipe_cache_cw.address[31:8], cache_addr1[31:8], dut.dcache_datapath.valid1.data[set], set);
         hit_count--;
         return 1;
     endfunction
@@ -350,7 +363,7 @@ dcache dut(
   	.mem_resp          (mem_resp_out),
   	.pmem_wdata        (itf.pmem_wdata),
   	.pmem_address      (itf.pmem_address),
-  	.mem_rdata         (itf.pmem_rdata),
+  	.mem_rdata         (mem_rdata_out),
   	.load_pipeline     (load_pipeline_out)
 );
 

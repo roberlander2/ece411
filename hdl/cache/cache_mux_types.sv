@@ -12,8 +12,8 @@ endpackage
 
 package write_en_mux;
 	typedef enum logic [1:0] {
-		load_no_hit = 2'b10,
-		load_and_hit = 2'b11
+		load_no_read = 2'b10,
+		load_and_read  = 2'b11
 	} write_en_sel_t;
 	
 endpackage

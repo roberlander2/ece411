@@ -18,6 +18,8 @@ module dcache_dp #(
 	 input [s_line-1:0] pmem_rdata,
 	 input [s_mask-1:0] mem_byte_enable256,
 	 input rv32i_word mem_address,
+	 input rv32i_word mem_wdata,
+	 input logic [3:0] mem_byte_enable,
 	 input load_lru,
 	 input [1:0] load_data,
 	 input [1:0] load_tag,
@@ -69,8 +71,8 @@ assign valid_in = 1'b1;
 assign cache_cw.address = mem_address;
 assign cache_cw.mem_read = mem_read;
 assign cache_cw.mem_write = mem_write;
-assign cache_cw.mem_byte_enable256 = mem_byte_enable256;
-assign cache_cw.mem_wdata256 =  mem_wdata256;
+assign cache_cw.mem_byte_enable = mem_byte_enable;
+assign cache_cw.mem_wdata = mem_wdata;
 
 //modules
 data_array line[1:0] (
@@ -118,8 +120,8 @@ array dirty1 (
 	.load(load_dirty1),
 	.read(read_high),
 	.rindex(index),
-	.windex(cache_cw.address[7:5]),
-	.datain(load_dirty1),
+	.windex(pipe_cache_cw.address[7:5]),
+	.datain(set_dirty1),
 	.dataout(dirty_out1)
 );
 
@@ -128,8 +130,8 @@ array dirty0 (
 	.load(load_dirty0),
 	.read(read_high),
 	.rindex(index),
-	.windex(cache_cw.address[7:5]),
-	.datain(load_dirty0),
+	.windex(pipe_cache_cw.address[7:5]),
+	.datain(set_dirty0),
 	.dataout(dirty_out0)
 );
 
@@ -137,7 +139,7 @@ array LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.rindex(pipe_cache_cw.address[7:5]),
+	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
@@ -159,8 +161,8 @@ assign lru_in = tag0_hit;
 assign tag0_hit = (tag_out[0] == pipe_cache_cw.address[31:8]) && (valid_out0 == 1'b1);
 assign tag1_hit = (tag_out[1] == pipe_cache_cw.address[31:8]) && (valid_out1 == 1'b1);
 assign hit = (tag1_hit) || (tag0_hit);
-assign write_en0_sel = {load_data[0], hit};
-assign write_en1_sel = {load_data[1], hit};
+assign write_en0_sel = {load_data[0], pipe_cache_cw.mem_read};
+assign write_en1_sel = {load_data[1], pipe_cache_cw.mem_read};
 
 assign tag_in[0] = pipe_cache_cw.address[31:8];
 assign tag_in[1] = pipe_cache_cw.address[31:8];
@@ -198,14 +200,28 @@ always_comb begin
 	endcase
 	 
 	unique case (write_en0_sel)
-		write_en_mux::load_no_hit: write_en_mux_out[0] = 32'hFFFFFFFF;
-		write_en_mux::load_and_hit: write_en_mux_out[0] = mem_byte_enable256;
+		write_en_mux::load_no_read : begin
+													if(set_valid0) begin
+														write_en_mux_out[0] = 32'hFFFFFFFF;
+													end
+													else begin
+														write_en_mux_out[0] = mem_byte_enable256;
+													end
+											  end
+		write_en_mux::load_and_read : write_en_mux_out[0] = 32'hFFFFFFFF;
 		default: write_en_mux_out[0] = 32'b0;
 	endcase
 	 
 	unique case (write_en1_sel) //change the enumerated type names to be more descriptive
-		write_en_mux::load_no_hit: write_en_mux_out[1] = 32'hFFFFFFFF;
-		write_en_mux::load_and_hit: write_en_mux_out[1] = mem_byte_enable256;
+		write_en_mux::load_no_read : begin
+													if(set_valid1) begin
+														write_en_mux_out[1] = 32'hFFFFFFFF;
+													end
+													else begin
+														write_en_mux_out[1] = mem_byte_enable256;
+													end
+											  end
+		write_en_mux::load_and_read : write_en_mux_out[1] = 32'hFFFFFFFF;
 		default: write_en_mux_out[1] = 32'b0;
 	endcase
 	

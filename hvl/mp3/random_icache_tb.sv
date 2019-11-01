@@ -4,11 +4,11 @@ import rv32i_types::*;
 `define HIT_100 1
 `define HIT_50 2
 `define HIT_6 3
-`define HIT_RATE `HIT_100
+`define HIT_RATE `HIT_0
 
 `define ZERO_MBE 0
 
-`define NUM_TESTS 1000
+`define NUM_TESTS 10000
 `define VERBOSE 1
 
 module random_icache_tb;

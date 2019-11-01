@@ -81,9 +81,11 @@ always_comb begin
 							else begin
 								pmem_read = 1'b1;
 								load_pipeline  = 1'b0;
+								addr_sel = 1'b1;
 							end
 		load: begin
 					load_pipeline  = 1'b0;
+					addr_sel = 1'b1;
 					if(pmem_resp) begin
 						load_data[0] = ~lru_out;
 						load_tag[0] = ~lru_out;

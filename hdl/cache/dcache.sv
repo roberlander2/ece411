@@ -46,18 +46,22 @@ logic addr_sel;
 logic [s_line-1:0] mem_wdata256;
 logic [s_line-1:0] mem_rdata256;
 logic [s_mask-1:0] mem_byte_enable256;
-rv32i_word resp_address;
-rv32i_word address;
 cache_cw_t pipe_cache_cw;
 cache_cw_t cache_cw;
-
-assign resp_address = pipe_cache_cw.address;
-assign address = pipe_cache_cw.address;
 
 dcache_control dcache_ctrl (.*);
 
 dcache_dp dcache_datapath (.*);
 
-line_adapter bus_adapter(.*);
+line_adapter bus_adapter(
+    .mem_rdata256 			(mem_rdata256),
+    .mem_wdata					(pipe_cache_cw.mem_wdata),
+    .mem_byte_enable			(pipe_cache_cw.mem_byte_enable),
+    .resp_address				(pipe_cache_cw.address),
+    .address					(pipe_cache_cw.address),
+	 .mem_wdata256				(mem_wdata256),
+	 .mem_byte_enable256		(mem_byte_enable256),
+	 .mem_rdata					(mem_rdata)
+);
 
 endmodule : dcache

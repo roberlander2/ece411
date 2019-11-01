@@ -52,8 +52,8 @@ assign valid_in = 1'b1;
 assign cache_cw.address = mem_address;
 assign cache_cw.mem_read = mem_read;
 assign cache_cw.mem_write = 1'b0;
-assign cache_cw.mem_byte_enable256 = 32'b0;
-assign cache_cw.mem_wdata256 = 256'b0;
+assign cache_cw.mem_byte_enable = 4'b0;
+assign cache_cw.mem_wdata = 32'b0;
 
 //modules
 data_array line[1:0] (
@@ -100,7 +100,7 @@ array LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.rindex(pipe_cache_cw.address[7:5]),
+	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
@@ -133,10 +133,10 @@ always_comb begin
 	unique case (hit)
         bus_adapter_mux::data: begin
 											if({tag1_hit, tag0_hit} == 2'b10) begin
-												mem_rdata256= data_out[1];
+												mem_rdata256 = data_out[1];
 											end
 											else begin
-												mem_rdata256= data_out[0];
+												mem_rdata256 = data_out[0];
 											end
 										 end
 		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = pmem_rdata;

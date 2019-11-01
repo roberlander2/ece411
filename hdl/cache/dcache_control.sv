@@ -62,10 +62,25 @@ end
 always_comb begin
 	//next state logic
 	unique case(state)
-		idle: next_state = (cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle;
+		idle: begin
+					if(cache_cw.mem_read || cache_cw.mem_write)
+						next_state = hit_detection;
+					else
+						next_state = idle;
+				end
 		hit_detection: next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
-		load: next_state = pmem_resp ? write_data : load;
-		store: next_state = pmem_resp ? load : store;
+		load: begin
+					if(~pmem_resp)
+						next_state = load;
+					else
+						next_state = write_data;
+				end
+		store: begin
+					if(~pmem_resp)
+						next_state = store;
+					else
+						next_state = load;
+				 end
 		write_data: next_state = hit_detection;
 	default: next_state = idle;
 	endcase
@@ -80,7 +95,7 @@ always_comb begin
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
 								read_data = cache_cw.mem_read | cache_cw.mem_write;
-								if(mem_write) begin
+								if(pipe_cache_cw.mem_write) begin
 									load_data[0] = tag0_hit;
 									load_data[1] = tag1_hit;
 									set_dirty0 = tag0_hit;
@@ -89,6 +104,7 @@ always_comb begin
 							end
 							else begin
 								load_pipeline  = 1'b0; //stall the pipeline
+								addr_sel = 1'b1;
 								if(dirty_ctrl) begin
 									pmem_write = 1'b1;
 									clear_dirty0 = ~lru_out;
@@ -99,6 +115,7 @@ always_comb begin
 								end
 							end
 		load: begin
+					addr_sel = 1'b1;
 					load_pipeline  = 1'b0;
 					if(pmem_resp) begin
 						load_data[0] = ~lru_out;
@@ -113,6 +130,7 @@ always_comb begin
 					end
 				end
 		store:	begin
+						addr_sel = 1'b1;
 						load_pipeline  = 1'b0;
 						if(pmem_resp) begin
 							pmem_read = 1'b1;
@@ -127,6 +145,12 @@ always_comb begin
 							load_pipeline = 1'b0;
 							read_data = 1'b1;
 							addr_sel = 1'b1;
+							if(pipe_cache_cw.mem_write) begin
+									load_data[0] = ~lru_out;
+									load_data[1] = lru_out;
+									set_dirty0 = ~lru_out;
+									set_dirty1 = lru_out;
+							end
 						end
 	endcase
 end

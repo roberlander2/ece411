@@ -37,7 +37,7 @@
 
 
 set_global_assignment -name FAMILY "Stratix IV"
-set_global_assignment -name DEVICE EP4SGX530NF45C4ES
+set_global_assignment -name DEVICE EP4SGX180KF40C2
 set_global_assignment -name TOP_LEVEL_ENTITY mp3
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "18:29:08  OCTOBER 22, 2019"
@@ -59,6 +59,13 @@ set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH mp3_tb -section
 set_global_assignment -name EDA_TEST_BENCH_NAME mp3_tb -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id mp3_tb
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME mp3_tb -section_id mp3_tb
+set_global_assignment -name EDA_TEST_BENCH_NAME random_icache_tb -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME random_icache_tb -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_NAME random_dcache_tb -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id random_dcache_tb
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME random_dcache_tb -section_id random_dcache_tb
+set_global_assignment -name SDC_FILE mp3.out.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_dp.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_control.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter.sv
@@ -86,12 +93,6 @@ set_global_assignment -name SYSTEMVERILOG_FILE hdl/alu.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/icache_dp.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/icache_control.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/icache.sv
-set_global_assignment -name EDA_TEST_BENCH_NAME random_icache_tb -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id random_icache_tb
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME random_icache_tb -section_id random_icache_tb
-set_global_assignment -name EDA_TEST_BENCH_NAME random_dcache_tb -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id random_dcache_tb
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME random_dcache_tb -section_id random_dcache_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/magic_dual_port.sv -section_id mp3_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/mp3_tb.sv -section_id mp3_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id mp3_tb

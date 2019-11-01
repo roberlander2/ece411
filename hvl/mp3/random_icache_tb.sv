@@ -4,7 +4,7 @@ import rv32i_types::*;
 `define HIT_100 1
 `define HIT_50 2
 `define HIT_6 3
-`define HIT_RATE `HIT_0
+`define HIT_RATE `HIT_100
 
 `define ZERO_MBE 0
 

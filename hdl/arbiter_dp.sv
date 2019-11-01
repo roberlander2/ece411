@@ -46,12 +46,6 @@ always_comb begin
 					dresp = pmem_resp;
 					iresp = 1'b0;
 				end
-		default: begin
-						pmem_read = iread;
-						pmem_address = iaddress;
-						iresp = pmem_resp;
-						dresp = 1'b0;
-					end
 	endcase	
 end
 		

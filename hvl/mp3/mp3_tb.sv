@@ -31,7 +31,7 @@ always @(posedge itf.clk) begin
 
     // CP1 halt address = 168
     // CP2 halt address = 154
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
+    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000154)) begin
         good_count <= good_count + 1;
         if (good_count == 2)
             itf.halt <= 1'b1;
@@ -91,5 +91,47 @@ memory physical_memory(
 //     .rdata    (ditf.pmem_rdata)
 // );
 
+// FOR USE WITHOUT THE ARBITER (PUT INTO MP3.SV)
+//dcache dcache(
+//	.clk					(clk),
+//	.mem_write			(dwrite),
+//	.mem_read			(dread),
+//	.pmem_resp			(dpmem_resp),
+//	.pmem_rdata			(dpmem_rdata),
+//	.mem_wdata			(mem_wdata),
+//	.mem_address		(mem_address),
+//	.mem_byte_enable	(mem_byte_enable),
+//	.load_ipipeline	(iload_pipeline),
+//	.pmem_read			(dpmem_read),
+//	.pmem_write			(dpmem_write),
+//	.mem_resp			(dcache_resp),
+//	.pmem_wdata			(dpmem_wdata),
+//	.pmem_address		(dpmem_address),
+//	.mem_rdata			(mem_rdata),
+//	.load_pipeline 	(dload_pipeline)
+//);
+
+// FOR USE WITHOUT THE ARBITER (PUT INTO MP3.SV)
+//icache icache(
+//	.clk				(clk),
+//	.mem_read		(iread),
+//	.pmem_resp		(pmem_resp),
+//	.pmem_rdata		(pmem_rdata),
+//	.mem_address	(inst_addr),
+//	.load_dpipeline 	(dload_pipeline),
+//	.pmem_read		(pmem_read),
+//	.mem_resp		(icache_resp),
+//	.pmem_address	(pmem_address),
+//	.mem_rdata		(inst),
+//	.load_pipeline (iload_pipeline)
+//);
+
+// FOR USE WITHOUT THE ARBITER (PUT INTO MP3.SV)
+//	input dpmem_resp,
+//	input [255:0] dpmem_rdata,
+//	output logic dpmem_write,
+//	output rv32i_word dpmem_address,
+//	output logic [255:0] dpmem_wdata,
+//	output logic dpmem_read
 
 endmodule : mp3_tb

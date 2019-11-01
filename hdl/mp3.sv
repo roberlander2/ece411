@@ -8,14 +8,6 @@ module mp3(
 	output rv32i_word pmem_address,
 	output logic [255:0] pmem_wdata,
 	output logic pmem_read
-	
-	// comment out when using arbiter
-//	input dpmem_resp,
-//	input [255:0] dpmem_rdata,
-//	output logic dpmem_write,
-//	output rv32i_word dpmem_address,
-//	output logic [255:0] dpmem_wdata,
-//	output logic dpmem_read
 );
 
 rv32i_word inst; //inputted from the I-Cache
@@ -86,21 +78,6 @@ icache icache(
 	.load_pipeline 	(iload_pipeline)
 );
 
-// comment out when using arbiter
-//icache icache(
-//	.clk				(clk),
-//	.mem_read		(iread),
-//	.pmem_resp		(pmem_resp),
-//	.pmem_rdata		(pmem_rdata),
-//	.mem_address	(inst_addr),
-//	.load_dpipeline 	(dload_pipeline),
-//	.pmem_read		(pmem_read),
-//	.mem_resp		(icache_resp),
-//	.pmem_address	(pmem_address),
-//	.mem_rdata		(inst),
-//	.load_pipeline (iload_pipeline)
-//);
-
 dcache dcache(
 	.clk					(clk),
 	.mem_write			(dwrite),
@@ -119,25 +96,5 @@ dcache dcache(
 	.mem_rdata			(mem_rdata),
 	.load_pipeline 	(dload_pipeline)
 );
-
-// comment out when using arbiter
-//dcache dcache(
-//	.clk					(clk),
-//	.mem_write			(dwrite),
-//	.mem_read			(dread),
-//	.pmem_resp			(dpmem_resp),
-//	.pmem_rdata			(dpmem_rdata),
-//	.mem_wdata			(mem_wdata),
-//	.mem_address		(mem_address),
-//	.mem_byte_enable	(mem_byte_enable),
-//	.load_ipipeline	(iload_pipeline),
-//	.pmem_read			(dpmem_read),
-//	.pmem_write			(dpmem_write),
-//	.mem_resp			(dcache_resp),
-//	.pmem_wdata			(dpmem_wdata),
-//	.pmem_address		(dpmem_address),
-//	.mem_rdata			(mem_rdata),
-//	.load_pipeline 	(dload_pipeline)
-//);
 
 endmodule: mp3

@@ -23,7 +23,7 @@ module arbiter_dp
 );
 
 //and gate for pmem_write
-assign pmem_write = (cache_sel & dwrite);
+assign pmem_write = cache_sel && dwrite;
 
 assign i_rdata = pmem_rdata;
 assign d_rdata = pmem_rdata;
@@ -34,35 +34,25 @@ assign pmem_wdata = wdata;
 always_comb begin	 
 	//pmem_read mux
    unique case (cache_sel)	
-		1'b0:	pmem_read = iread;
-		1'b1:	pmem_read = dread;
-		default: pmem_read = iread;
-	endcase
-	//pmem_address mux
-	unique case (cache_sel)	
-		1'b0:	pmem_address = iaddress;
-		1'b1:	pmem_address = daddress;
-		default: pmem_address = iaddress;
-	endcase
-	//1 : 2 Decoder
-	unique case (cache_sel)	
-		1'b0:	
-		begin
-			iresp = pmem_resp;
-			dresp = 1'b0;
-		end
-		1'b1:	
-		begin 
-			dresp = pmem_resp;
-			iresp = 1'b0;
-		end
-		default: 
-		begin
-			iresp = pmem_resp;
-			dresp = 1'b0;
-		end
-	endcase
-	
+		1'b0:	begin
+					pmem_read = iread;
+					pmem_address = iaddress;
+					iresp = pmem_resp;
+					dresp = 1'b0;
+				end
+		1'b1:	begin
+					pmem_read = dread;
+					pmem_address = daddress;
+					dresp = pmem_resp;
+					iresp = 1'b0;
+				end
+		default: begin
+						pmem_read = iread;
+						pmem_address = iaddress;
+						iresp = pmem_resp;
+						dresp = 1'b0;
+					end
+	endcase	
 end
 		
 endmodule: arbiter_dp

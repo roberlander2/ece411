@@ -7,6 +7,7 @@ timeprecision 1ns;
 
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
+// tb_itf ditf();
 int timeout = 100000000;   // Feel Free to adjust the timeout value
 int good_count = 0;
 int bad_count = 0;
@@ -22,11 +23,14 @@ end
 
 // Stop simulation on timeout (stall detection), halt
 always @(posedge itf.clk) begin
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000144)) begin
-        bad_count <= bad_count + 1;
-        if (bad_count == 2)
-            itf.halt <= 1'b1;
-    end
+    // if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000144)) begin
+    //     bad_count <= bad_count + 1;
+    //     if (bad_count == 2)
+    //         itf.halt <= 1'b1;
+    // end
+
+    // CP1 halt address = 168
+    // CP2 halt address = 154
     if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
         good_count <= good_count + 1;
         if (good_count == 2)
@@ -58,6 +62,13 @@ mp3 dut(
     .pmem_read    (itf.pmem_read)
 );
 
+// .dpmem_resp    (ditf.pmem_resp),
+// .dpmem_rdata   (ditf.pmem_rdata),
+// .dpmem_write   (ditf.pmem_write),
+// .dpmem_address (ditf.pmem_address),
+// .dpmem_wdata   (ditf.pmem_wdata),
+// .dpmem_read    (ditf.pmem_read)
+
 memory physical_memory(
     .clk      (itf.clk),
     .read     (itf.pmem_read),
@@ -68,6 +79,17 @@ memory physical_memory(
     .error    (itf.pm_error),
     .rdata    (itf.pmem_rdata)
 );
+
+// memory dphysical_memory(
+//     .clk      (ditf.clk),
+//     .read     (ditf.pmem_read),
+//     .write    (ditf.pmem_write),
+//     .address  (ditf.pmem_address),
+//     .wdata    (ditf.pmem_wdata),
+//     .resp     (ditf.pmem_resp),
+//     .error    (ditf.pm_error),
+//     .rdata    (ditf.pmem_rdata)
+// );
 
 
 endmodule : mp3_tb

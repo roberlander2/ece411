@@ -34,6 +34,8 @@ module dcache_dp #(
 	 input read_data,
 	 input addr_sel,
 	 input load_pipeline,
+	 input load_ipipeline,
+	 input mem_resp,
 	 output logic [s_line-1:0] pmem_wdata,
 	 output logic [s_line-1:0] mem_rdata256,
 	 output rv32i_word pmem_address,
@@ -148,7 +150,7 @@ array LRU (
 // Pipeline CW
 cache_cw_reg CW(
 	.clk(clk),
-	.load(load_pipeline),
+	.load((load_pipeline && load_ipipeline) || (load_pipeline && ~load_ipipeline && ~mem_resp)),
 	.in(cache_cw),
 	.out(pipe_cache_cw)
 );
@@ -180,8 +182,8 @@ always_comb begin
 		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = data_out[0];
         default: mem_rdata256 = pmem_rdata;
     endcase
-	 
-	 
+
+
 	/*
 	*Mux to handle race condtion on reads and writes to the same
 	*index is handled within the array
@@ -192,13 +194,13 @@ always_comb begin
 		bus_adapter_mux::mem_wdata256: datain[0] = mem_wdata256;
       default: datain[0] = pmem_rdata;
 	endcase
-	 
+
 	unique case (set_dirty1)
 		bus_adapter_mux::mem_rdata256: datain[1] = pmem_rdata;
 		bus_adapter_mux::mem_wdata256: datain[1] = mem_wdata256;
 		default: datain[1] = pmem_rdata;
 	endcase
-	 
+
 	unique case (write_en0_sel)
 		write_en_mux::load_no_read : begin
 													if(set_valid0) begin
@@ -211,7 +213,7 @@ always_comb begin
 		write_en_mux::load_and_read : write_en_mux_out[0] = 32'hFFFFFFFF;
 		default: write_en_mux_out[0] = 32'b0;
 	endcase
-	 
+
 	unique case (write_en1_sel) //change the enumerated type names to be more descriptive
 		write_en_mux::load_no_read : begin
 													if(set_valid1) begin
@@ -224,13 +226,13 @@ always_comb begin
 		write_en_mux::load_and_read : write_en_mux_out[1] = 32'hFFFFFFFF;
 		default: write_en_mux_out[1] = 32'b0;
 	endcase
-	
+
 	unique case(lru_out)
 		dirty_mux::dirty0: begin
 										dirty_ctrl = dirty_out0;
 										pmem_wdata = data_out[0];
 								 end
-								 
+
 		dirty_mux::dirty1: begin
 										dirty_ctrl = dirty_out1;
 										pmem_wdata = data_out[1];
@@ -240,7 +242,7 @@ always_comb begin
 										pmem_wdata = data_out[0];
 								 end
 	endcase
-	
+
 	unique case({clear_dirty1, clear_dirty0})
 		pmem_addr_mux::mem_addr: pmem_address = pipe_cache_cw.address;
 		pmem_addr_mux::way0: pmem_address = {tag_out[0], pipe_cache_cw.address[7:5], 5'b0};

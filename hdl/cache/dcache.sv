@@ -17,6 +17,7 @@ module dcache #(
 	input rv32i_word mem_wdata,
 	input rv32i_word mem_address,
 	input [3:0] mem_byte_enable,
+	input load_ipipeline,
 	output logic pmem_read,
 	output logic pmem_write,
 	output logic mem_resp,

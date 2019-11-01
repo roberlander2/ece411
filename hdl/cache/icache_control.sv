@@ -10,6 +10,7 @@ module icache_control(
 	input tag0_hit,
 	input cache_cw_t pipe_cache_cw,
 	input cache_cw_t cache_cw,
+	input load_dpipeline,
 	output logic pmem_read,
 	output logic mem_resp,
 	output logic [1:0] load_data,
@@ -56,7 +57,12 @@ always_comb begin
 					else
 						next_state = idle;
 				end
-		hit_detection: next_state = hit ? (cache_cw.mem_read ? hit_detection : idle) : load;
+		hit_detection: begin
+									if (~load_dpipeline && mem_resp)
+											next_state = hit_detection;
+									else
+											next_state = hit ? (cache_cw.mem_read ? hit_detection : idle) : load;
+								end
 		load: begin
 					if(~pmem_resp)
 						next_state = load;
@@ -73,10 +79,10 @@ always_comb begin
 	set_defaults();
 	unique case(state)
 		idle:	read_data = cache_cw.mem_read;
-		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
+		hit_detection: if(hit || ~load_dpipeline) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
-								read_data = cache_cw.mem_read;
+								read_data = cache_cw.mem_read && load_dpipeline;
 							end
 							else begin
 								pmem_read = 1'b1;

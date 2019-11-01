@@ -30,6 +30,9 @@ logic mem_write_in;
 rv32i_word mem_rdata_out;
 logic mem_resp_out;
 logic load_pipeline_out;
+logic load_dpipeline;
+
+assign load_dpipeline = 1'b1;
 /*****************************************************************************/
 
 class RandomCacheInput;
@@ -256,17 +259,17 @@ end
 
 /*****************************************************************************/
 icache dut(
-    .clk              (itf.clk),
-    .mem_address      (mem_address_in),
-   	.mem_read         (mem_read_in),
-    .pmem_resp        (itf.pmem_resp),
-    .pmem_rdata       (itf.pmem_rdata),
-
-    .mem_rdata        (mem_rdata_out),
- 	  .mem_resp         (mem_resp_out),
-    .pmem_read        (itf.pmem_read),
-    .pmem_address     (itf.pmem_address),
-    .load_pipeline    (load_pipeline_out)
+    .clk                (itf.clk),
+    .mem_address        (mem_address_in),
+   	.mem_read           (mem_read_in),
+    .pmem_resp          (itf.pmem_resp),
+    .pmem_rdata         (itf.pmem_rdata),
+    .load_dpipeline     (load_dpipeline),
+    .mem_rdata          (mem_rdata_out),
+ 	  .mem_resp           (mem_resp_out),
+    .pmem_read          (itf.pmem_read),
+    .pmem_address       (itf.pmem_address),
+    .load_pipeline      (load_pipeline_out)
 );
 
 pmem_random_cache_tb memory(

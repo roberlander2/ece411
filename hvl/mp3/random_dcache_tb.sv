@@ -31,6 +31,9 @@ logic mem_write_in;
 rv32i_word mem_rdata_out;
 logic mem_resp_out;
 logic load_pipeline_out;
+logic load_ipipeline;
+
+assign load_ipipeline = 1'b1;
 /*****************************************************************************/
 
 class RandomCacheInput;
@@ -349,22 +352,22 @@ end
 
 /*****************************************************************************/
 dcache dut(
-	  .clk               (itf.clk),
-  	.mem_write         (mem_write_in),
-  	.mem_read          (mem_read_in),
-  	.pmem_resp         (itf.pmem_resp),
-  	.pmem_rdata        (itf.pmem_rdata),
-  	.mem_wdata         (mem_wdata_in),
-  	.mem_address       (mem_address_in),
-  	.mem_byte_enable   (mem_byte_enable_in),
-
-  	.pmem_read         (itf.pmem_read),
-  	.pmem_write        (itf.pmem_write),
-  	.mem_resp          (mem_resp_out),
-  	.pmem_wdata        (itf.pmem_wdata),
-  	.pmem_address      (itf.pmem_address),
-  	.mem_rdata         (mem_rdata_out),
-  	.load_pipeline     (load_pipeline_out)
+	  .clk                 (itf.clk),
+  	.mem_write           (mem_write_in),
+  	.mem_read            (mem_read_in),
+  	.pmem_resp           (itf.pmem_resp),
+  	.pmem_rdata          (itf.pmem_rdata),
+  	.mem_wdata           (mem_wdata_in),
+  	.mem_address         (mem_address_in),
+  	.mem_byte_enable     (mem_byte_enable_in),
+    .load_ipipeline      (load_ipipeline),
+  	.pmem_read           (itf.pmem_read),
+  	.pmem_write          (itf.pmem_write),
+  	.mem_resp            (mem_resp_out),
+  	.pmem_wdata          (itf.pmem_wdata),
+  	.pmem_address        (itf.pmem_address),
+  	.mem_rdata           (mem_rdata_out),
+  	.load_pipeline       (load_pipeline_out)
 );
 
 pmem_random_cache_tb memory(

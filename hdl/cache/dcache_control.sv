@@ -12,6 +12,7 @@ module dcache_control(
 	input tag0_hit,
 	input cache_cw_t pipe_cache_cw,
 	input cache_cw_t cache_cw,
+	input load_ipipeline,
 	output logic pmem_read,
 	output logic pmem_write,
 	output logic mem_resp,
@@ -68,7 +69,12 @@ always_comb begin
 					else
 						next_state = idle;
 				end
-		hit_detection: next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
+		hit_detection: begin
+								if (~load_ipipeline && mem_resp)
+									next_state = hit_detection;
+								else
+									next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
+							end
 		load: begin
 					if(~pmem_resp)
 						next_state = load;
@@ -94,7 +100,7 @@ always_comb begin
 		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
-								read_data = cache_cw.mem_read | cache_cw.mem_write;
+								read_data = (cache_cw.mem_read | cache_cw.mem_write) && load_ipipeline;
 								if(pipe_cache_cw.mem_write) begin
 									load_data[0] = tag0_hit;
 									load_data[1] = tag1_hit;

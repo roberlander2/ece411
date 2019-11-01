@@ -14,6 +14,7 @@ module icache #(
 	input pmem_resp,
 	input [s_line-1:0] pmem_rdata,
 	input rv32i_word mem_address,
+	input load_dpipeline,
 	output logic pmem_read,
 	output logic mem_resp,
 	output rv32i_word pmem_address,

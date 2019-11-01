@@ -21,6 +21,8 @@ module icache_dp #(
 	 input read_data,
 	 input addr_sel,
 	 input load_pipeline,
+	 input load_dpipeline,
+	 input mem_resp,
 	 output logic [s_line-1:0] mem_rdata256,
 	 output rv32i_word pmem_address,
 	 output logic hit,
@@ -109,7 +111,7 @@ array LRU (
 // Pipeline CW
 cache_cw_reg CW(
 	.clk(clk),
-	.load(load_pipeline),
+	.load((load_pipeline && load_dpipeline) || (load_pipeline && ~load_dpipeline && ~mem_resp)),
 	.in(cache_cw),
 	.out(pipe_cache_cw)
 );

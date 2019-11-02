@@ -63,30 +63,22 @@ end
 always_comb begin
 	//next state logic
 	unique case(state)
-		idle: begin
-					if(cache_cw.mem_read || cache_cw.mem_write)
-						next_state = hit_detection;
-					else
-						next_state = idle;
-				end
-		hit_detection: begin
-								if (~load_ipipeline && mem_resp)
-									next_state = hit_detection;
-								else
-									next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
-							end
-		load: begin
-					if(~pmem_resp)
-						next_state = load;
-					else
-						next_state = write_data;
-				end
-		store: begin
-					if(~pmem_resp)
+		idle: if(cache_cw.mem_read || cache_cw.mem_write)
+					next_state = hit_detection;
+				else
+					next_state = idle;
+		hit_detection: if (~load_ipipeline && mem_resp)
+								next_state = hit_detection;
+							else
+								next_state = hit ? ((cache_cw.mem_read || cache_cw.mem_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
+		load: if(~pmem_resp)
+					next_state = load;
+				else
+					next_state = write_data;
+		store: 	if(~pmem_resp)
 						next_state = store;
 					else
 						next_state = load;
-				 end
 		write_data: next_state = hit_detection;
 	default: next_state = idle;
 	endcase

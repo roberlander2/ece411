@@ -5,9 +5,14 @@ module arbiter_control
 			input pmem_resp,
 			input dwrite,
 			input dread,
+			output logic iresp,
+			output logic dresp,
 			output logic cache_sel
 );
 
+logic dservice;
+
+assign dservice = dread || dwrite;
 
 enum int unsigned {
 	idle, service_icache, service_dcache
@@ -18,27 +23,17 @@ begin : next_state_logic
     /* Next state information and conditions (if any)
      * for transitioning between states */
 	  unique case (state)
-		 idle: begin
-					if(iread) next_state = service_icache;
-					else if (dread || dwrite) next_state = service_dcache;
-					else next_state = idle;
-				 end
-		
-		 service_icache: 	if (pmem_resp) begin
-									if (dread || dwrite)
-										next_state = service_dcache;
-									else
-										next_state = idle;
-								end
+		 idle: 	if(iread) 
+						next_state = service_icache;
+					else 
+						next_state = (dservice) ? service_dcache : idle;
+		 service_icache: 	if (pmem_resp)
+									next_state = (dservice) ? service_dcache : idle;
 								else
 									next_state = service_icache;
 		 
-		 service_dcache: 	if (pmem_resp) begin
-									if (iread)
-										next_state = service_icache;
-									else
-										next_state = idle;
-								end
+		 service_dcache: 	if (pmem_resp)
+									next_state = (iread) ? service_icache : idle;
 								else
 									next_state = service_dcache;
 	endcase
@@ -46,10 +41,19 @@ end
 
 always_comb
 begin : state_actions
+	 iresp = 1'b0;
+	 dresp = 1'b0;
 	 unique case (state)
-		idle:	cache_sel = dread || dwrite;
-		service_icache:	cache_sel = 1'b0;
-		service_dcache:	cache_sel = 1'b1;
+		idle:	cache_sel = dservice;
+		service_icache:	begin
+									cache_sel = 1'b0;
+									iresp = pmem_resp;
+								end
+								
+		service_dcache:	begin
+									cache_sel = 1'b1;
+									dresp = pmem_resp;
+								end
 	endcase
 end
 

@@ -31,7 +31,7 @@ always @(posedge itf.clk) begin
 
     // CP1 halt address = 168
     // CP2 halt address = 154
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000154)) begin
+    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
         good_count <= good_count + 1;
         if (good_count == 2)
             itf.halt <= 1'b1;
@@ -104,7 +104,6 @@ memory physical_memory(
 //	.load_ipipeline	(iload_pipeline),
 //	.pmem_read			(dpmem_read),
 //	.pmem_write			(dpmem_write),
-//	.mem_resp			(dcache_resp),
 //	.pmem_wdata			(dpmem_wdata),
 //	.pmem_address		(dpmem_address),
 //	.mem_rdata			(mem_rdata),
@@ -120,7 +119,6 @@ memory physical_memory(
 //	.mem_address	(inst_addr),
 //	.load_dpipeline 	(dload_pipeline),
 //	.pmem_read		(pmem_read),
-//	.mem_resp		(icache_resp),
 //	.pmem_address	(pmem_address),
 //	.mem_rdata		(inst),
 //	.load_pipeline (iload_pipeline)

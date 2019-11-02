@@ -30,8 +30,6 @@ logic [255:0] d_rdata;
 logic [255:0] wdata;
 
 // icache and dcache
-logic icache_resp;
-logic dcache_resp;
 logic ipmem_read;
 logic dpmem_read;	// comment out when not using arbiter
 logic dpmem_write;	// comment out when not using arbiter
@@ -54,6 +52,7 @@ arbiter arbiter(
 	.daddress		(daddress),
 	.wdata			(wdata),
 	.dread			(dpmem_read),
+	
 	.iresp			(iresp),
 	.i_rdata			(i_rdata),
 	.pmem_read		(pmem_read),
@@ -71,8 +70,8 @@ icache icache(
 	.pmem_rdata			(i_rdata),
 	.mem_address		(inst_addr),
 	.load_dpipeline 	(dload_pipeline),
+	
 	.pmem_read			(ipmem_read),
-	.mem_resp			(icache_resp),
 	.pmem_address		(iaddress),
 	.mem_rdata			(inst),
 	.load_pipeline 	(iload_pipeline)
@@ -88,9 +87,9 @@ dcache dcache(
 	.mem_address		(mem_address),
 	.mem_byte_enable	(mem_byte_enable),
 	.load_ipipeline	(iload_pipeline),
+	
 	.pmem_read			(dpmem_read),
 	.pmem_write			(dpmem_write),
-	.mem_resp			(dcache_resp),
 	.pmem_wdata			(wdata),
 	.pmem_address		(daddress),
 	.mem_rdata			(mem_rdata),

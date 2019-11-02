@@ -20,7 +20,6 @@ module dcache #(
 	input load_ipipeline,
 	output logic pmem_read,
 	output logic pmem_write,
-	output logic mem_resp,
 	output logic [s_line-1:0] pmem_wdata,
 	output rv32i_word pmem_address,
 	output rv32i_word mem_rdata,
@@ -43,6 +42,7 @@ logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
 logic addr_sel;
+logic mem_resp;
 
 logic [s_line-1:0] mem_wdata256;
 logic [s_line-1:0] mem_rdata256;

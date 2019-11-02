@@ -6,20 +6,17 @@ module arbiter_dp
 			input iread,
 			input rv32i_word iaddress,
 			input [255:0] pmem_rdata,
-			input pmem_resp,
 			input dwrite,
 			input rv32i_word daddress,
 			input [255:0] wdata,
 			input dread,
 			input cache_sel,
-			output logic iresp,
 			output logic [255:0] i_rdata,
 			output logic pmem_read,
 			output logic [255:0] pmem_wdata,
 			output rv32i_word pmem_address,
 			output logic pmem_write,
-			output logic [255:0] d_rdata,
-			output logic dresp
+			output logic [255:0] d_rdata
 );
 
 //and gate for pmem_write
@@ -37,15 +34,15 @@ always_comb begin
 		1'b0:	begin
 					pmem_read = iread;
 					pmem_address = iaddress;
-					iresp = pmem_resp;
-					dresp = 1'b0;
 				end
 		1'b1:	begin
 					pmem_read = dread;
 					pmem_address = daddress;
-					dresp = pmem_resp;
-					iresp = 1'b0;
 				end
+		default:	begin
+						pmem_read = iread;
+						pmem_address = iaddress;
+					end
 	endcase	
 end
 		

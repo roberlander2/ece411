@@ -4,7 +4,7 @@ import rv32i_types::*;
 `define HIT_100 1
 `define HIT_50 2
 `define HIT_6 3
-`define HIT_RATE `HIT_100
+`define HIT_RATE `HIT_50
 
 `define ZERO_MBE 0
 
@@ -34,6 +34,7 @@ logic load_pipeline_out;
 logic load_ipipeline;
 
 assign load_ipipeline = 1'b1;
+assign mem_resp_out = dut.mem_resp;
 /*****************************************************************************/
 
 class RandomCacheInput;
@@ -363,7 +364,6 @@ dcache dut(
     .load_ipipeline      (load_ipipeline),
   	.pmem_read           (itf.pmem_read),
   	.pmem_write          (itf.pmem_write),
-  	.mem_resp            (mem_resp_out),
   	.pmem_wdata          (itf.pmem_wdata),
   	.pmem_address        (itf.pmem_address),
   	.mem_rdata           (mem_rdata_out),

@@ -16,7 +16,6 @@ module icache #(
 	input rv32i_word mem_address,
 	input load_dpipeline,
 	output logic pmem_read,
-	output logic mem_resp,
 	output rv32i_word pmem_address,
 	output rv32i_word mem_rdata,
 	output logic load_pipeline
@@ -33,6 +32,7 @@ logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
 logic addr_sel;
+logic mem_resp;
 
 logic [s_line-1:0] mem_rdata256;
 cache_cw_t pipe_cache_cw;

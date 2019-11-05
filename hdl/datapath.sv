@@ -81,6 +81,47 @@ assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
 assign dwrite = exmem_cw.mem_write;
 
+logic forward_exmem_rs1;
+logic forward_memwb_rs1;
+logic forward_exmem_rs2;
+logic forward_memwb_rs2;
+
+forward exmem_rs1 (
+	.write(exmem_cw.load_regfile),
+	.valid_src(idex_cw.rs1_valid),
+	.valid_dest(exmem_cw.rd_valid),
+	.src(idex_cw.src1),
+	.dest(exmem_cw.dest),
+	.fwd(forward_exmem_rs1)
+);
+
+forward memwb_rs1 (
+	.write(memwb_cw.load_regfile),
+	.valid_src(idex_cw.rs1_valid),
+	.valid_dest(memwb_cw.rd_valid),
+	.src(idex_cw.src1),
+	.dest(memwb_cw.dest),
+	.fwd(forward_memwb_rs1)
+);
+
+forward exmem_rs2(
+	.write(exmem_cw.load_regfile),
+	.valid_src(idex_cw.rs2_valid),
+	.valid_dest(exmem_cw.rd_valid),
+	.src(idex_cw.src2),
+	.dest(exmem_cw.dest),
+	.fwd(forward_exmem_rs2)
+);
+
+forward memwb_rs2 (
+	.write(memwb_cw.load_regfile),
+	.valid_src(idex_cw.rs2_valid),
+	.valid_dest(memwb_cw.rd_valid),
+	.src(idex_cw.src2),
+	.dest(memwb_cw.dest),
+	.fwd(forward_memwb_rs2)
+);
+
 //datapath modules
 //fetch
 pc PC(

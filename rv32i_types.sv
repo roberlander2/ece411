@@ -83,8 +83,12 @@ typedef struct packed {
 	regfilemux::regfilemux_sel_t regfilemux_sel;
 	marmux::marmux_sel_t marmux_sel;
 	logic load_regfile;
+	logic rs1_valid;
+	logic rs2_valid;
+	logic rd_valid;
 	logic mem_read;
 	logic mem_write;
+	logic flush;
 	logic [6:0] funct7;
 	logic [2:0] funct3;
 	rv32i_word i_imm; //potentially optimize -- extend to 32 bits and sign extend?

@@ -31,6 +31,18 @@ function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 	cw.cmpop = op;
 endfunction
 
+function void setRS1valid();
+	cw.rs1_valid = 1'b1;
+endfunction
+
+function void setRS2valid();
+	cw.rs2_valid = 1'b1;
+endfunction
+
+function void setRDvalid();
+	cw.rd_valid = 1'b1;
+endfunction
+
 function void set_defaults();
 	cw.aluop = alu_add;
 	cw.cmpop = beq;
@@ -43,6 +55,10 @@ function void set_defaults();
 	cw.mem_read = 1'b0;
 	cw.mem_write = 1'b0;
 	cw.wmask = 4'b0;
+	cw.rs1_valid = 1'b0;
+	cw.rs2_valid = 1'b0;
+	cw.rd_valid = 1'b0;
+	cw.flush = 1'b0;
 endfunction
 
 always_comb begin : opcode_actions
@@ -65,27 +81,36 @@ always_comb begin : opcode_actions
 	unique case(cw.opcode)
 		op_lui: begin
 					loadRegfile(regfilemux::u_imm);
+					setRDvalid();
 				 end
 		op_auipc: begin
 						loadRegfile(regfilemux::alu_out);
 						setALU(alumux::pc_out, alumux::u_imm, 1'b1);
+						setRDvalid();
 					end
 		op_jal: begin
 					loadRegfile(regfilemux::pc_plus4);
 					setALU(alumux::pc_out, alumux::j_imm, 1'b1);
+					setRDvalid();
 				 end
 		op_jalr: begin
 					loadRegfile(regfilemux::pc_plus4);
 					setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
+					setRDvalid();
+					setRS1valid();
 				  end
 		op_br:  begin
 					setALU(alumux::pc_out, alumux::b_imm, 1'b1);
 					setCMP(cmpmux::rs2_out, branch_funct3_t'(cw.funct3));
+					setRS1valid();
+					setRS2valid();
 				  end
 		op_load: begin
 						loadMAR(marmux::alu_out);
 						cw.mem_read = 1'b1;
 						setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
+						setRDvalid();
+						setRS1valid();
 						unique case(load_funct3_t'(cw.funct3))
 							lb: loadRegfile(regfilemux::lb);
 							lh: loadRegfile(regfilemux::lh);
@@ -99,6 +124,8 @@ always_comb begin : opcode_actions
 						loadMAR(marmux::alu_out);
 						setALU(alumux::rs1_out, alumux::s_imm, 1'b1);
 						cw.mem_write = 1'b1;
+						setRS1valid();
+						setRS2valid();
 						unique case (store_funct3_t'(cw.funct3))
 							sw: cw.wmask = 4'b1111;
 							sh: cw.wmask = 4'b0011;
@@ -107,6 +134,8 @@ always_comb begin : opcode_actions
 						endcase
 					 end
 		op_imm: begin 
+						setRS1valid();
+						setRDvalid();
 						loadRegfile(regfilemux::alu_out);
 						unique case(arith_funct3_t'(cw.funct3))
 							add: begin
@@ -151,6 +180,9 @@ always_comb begin : opcode_actions
 					 end
 		op_reg: begin 
 						loadRegfile(regfilemux::alu_out);
+						setRS1valid();
+						setRS2valid();
+						setRDvalid();
 						unique case(arith_funct3_t'(cw.funct3))
 							add: begin
 									  loadRegfile(regfilemux::alu_out);

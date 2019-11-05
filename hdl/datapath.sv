@@ -68,13 +68,23 @@ rv32i_word memwb_cmp_out;
 rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
 
+logic [1:0] mem_addrmod4;
+logic [4:0] mem_addrmod4_mult;
+rv32i_word mdrreg_bytemask;
+rv32i_word mdrreg_halfmask;
+
+assign mem_addrmod4 = mem_address[1:0];
+assign mem_addrmod4_mult = mem_addrmod4 << 3;
+assign mdrreg_bytemask = (mem_rdata & (32'h000000FF << mem_addrmod4_mult)) >> mem_addrmod4_mult;
+assign mdrreg_halfmask = (mem_rdata & (32'h0000FFFF << mem_addrmod4_mult)) >> mem_addrmod4_mult;
+
 assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
 assign load_pc = load_pipeline;
 assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
-assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
-assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
+assign is_jalr = (idex_cw.opcode == op_jalr);
+assign is_jal = (idex_cw.opcode == op_jal);
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
@@ -250,7 +260,7 @@ always_comb begin
     unique case (pcmux_sel)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;
 		  pcmux::alu_out: pcmux_out = alu_out;
-		  pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
+		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
         default: pcmux_out = pc_out + 4;
     endcase
 	 	 
@@ -291,38 +301,10 @@ always_comb begin
 	 regfilemux::u_imm: regfilemux_out = memwb_cw.u_imm;
 	 regfilemux::lw: regfilemux_out = mem_rdata;
 	 regfilemux::pc_plus4: regfilemux_out = memwb_pc_out + 4;
-    regfilemux::lb:  begin
-								unique case(mem_address[1:0])
-									2'b00: regfilemux_out = {{24{mem_rdata[7]}}, mem_rdata[7:0]};
-									2'b01: regfilemux_out = {{24{mem_rdata[15]}}, mem_rdata[15:8]};
-									2'b10: regfilemux_out = {{24{mem_rdata[23]}}, mem_rdata[23:16]};
-									2'b11: regfilemux_out = {{24{mem_rdata[31]}}, mem_rdata[31:24]};
-								endcase
-							end
-	 regfilemux::lbu: begin
-								unique case(mem_address[1:0])
-									2'b00: regfilemux_out = {24'b0, mem_rdata[7:0]};
-									2'b01: regfilemux_out = {24'b0, mem_rdata[15:8]};
-									2'b10: regfilemux_out = {24'b0, mem_rdata[23:16]};
-									2'b11: regfilemux_out = {24'b0, mem_rdata[31:24]};
-								endcase
-							end
-    regfilemux::lh: begin
-							  unique case(mem_address[1:0])
-									2'b00: regfilemux_out = {{16{mem_rdata[15]}}, mem_rdata[15:0]};
-									2'b01: regfilemux_out = {{16{mem_rdata[23]}}, mem_rdata[23:8]};
-									2'b10: regfilemux_out = {{16{mem_rdata[31]}}, mem_rdata[31:16]};
-									2'b11: regfilemux_out = {24'b0, mem_rdata[31:24]};
-								endcase
-						  end
-    regfilemux::lhu: begin
-							  unique case(mem_address[1:0])
-									2'b00: regfilemux_out = {16'b0, mem_rdata[15:0]};
-									2'b01: regfilemux_out = {16'b0, mem_rdata[23:8]};
-									2'b10: regfilemux_out = {16'b0, mem_rdata[31:16]};
-									2'b11: regfilemux_out = {24'b0, mem_rdata[31:24]};
-								endcase
-						  end
+	 regfilemux::lb: regfilemux_out = mdrreg_bytemask | {{24{mdrreg_bytemask[7]}}, 8'h00};
+    regfilemux::lbu: regfilemux_out = mdrreg_bytemask;
+    regfilemux::lh: regfilemux_out = mdrreg_halfmask | {{16{mdrreg_halfmask[15]}}, 16'h0000};
+    regfilemux::lhu: regfilemux_out = mdrreg_halfmask;
 	 default: `BAD_MUX_SEL;
 	 endcase
 	 

@@ -79,7 +79,7 @@ inf:
    nop
    nop
    # cache line boundary
-	
+
 .section .rodata
 .balign 256
 DataSeg:

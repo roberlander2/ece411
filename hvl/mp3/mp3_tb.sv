@@ -10,30 +10,23 @@ tb_itf itf();
 // tb_itf ditf();
 int timeout = 100000000;   // Feel Free to adjust the timeout value
 int good_count = 0;
-int bad_count = 0;
 
 initial begin
     itf.halt = 1'b0;
 end
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
-// always @(posedge itf.clk iff itf.pm_error) begin
-//     $display("TOP: Halting on Physical Memory Error at time = %0t ps", $time);
-// end
+always @(posedge itf.clk iff itf.pm_error) begin
+    $display("TOP: Halting on Physical Memory Error at time = %0t ps", $time);
+end
 
 // Stop simulation on timeout (stall detection), halt
 always @(posedge itf.clk) begin
-    // if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000144)) begin
-    //     bad_count <= bad_count + 1;
-    //     if (bad_count == 2)
-    //         itf.halt <= 1'b1;
-    // end
-
     // CP1 halt address = 168
     // CP2 halt address = 154
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
+    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000154)) begin
         good_count <= good_count + 1;
-        if (good_count == 2)
+        if (good_count == 1)
             itf.halt <= 1'b1;
     end
     if (itf.halt)
@@ -45,9 +38,9 @@ always @(posedge itf.clk) begin
     timeout <= timeout - 1;
 end
 
-// Simulataneous Memory Read and Write
-// always @(posedge itf.clk iff (itf.mem_read && itf.mem_write))
-//     $error("@%0t TOP: Simultaneous memory read and write detected", $time);
+Simulataneous Memory Read and Write
+always @(posedge itf.clk iff (itf.pmem_read && itf.pmem_write))
+    $error("@%0t TOP: Simultaneous memory read and write detected", $time);
 
 /*****************************************************************************/
 // Change inputs and outputs to match

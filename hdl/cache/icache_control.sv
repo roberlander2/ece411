@@ -1,5 +1,3 @@
-import rv32i_types::*;
-
 module icache_control(
 	input clk,
 	input mem_read,
@@ -8,8 +6,7 @@ module icache_control(
 	input lru_out,
 	input tag1_hit,
 	input tag0_hit,
-	input cache_cw_t pipe_cache_cw,
-	input cache_cw_t cache_cw,
+	input cache_cw_read,
 	input load_dpipeline,
 	output logic pmem_read,
 	output logic mem_resp,
@@ -52,7 +49,7 @@ always_comb begin
 	//next state logic
 	unique case(state)
 		idle: begin
-					if(cache_cw.mem_read)
+					if(cache_cw_read)
 						next_state = hit_detection;
 					else
 						next_state = idle;
@@ -61,7 +58,7 @@ always_comb begin
 									if (~load_dpipeline && mem_resp)
 											next_state = hit_detection;
 									else
-											next_state = hit ? (cache_cw.mem_read ? hit_detection : idle) : load;
+											next_state = hit ? (cache_cw_read ? hit_detection : idle) : load;
 								end
 		load: begin
 					if(~pmem_resp)
@@ -78,11 +75,11 @@ always_comb begin
 	//state actions
 	set_defaults();
 	unique case(state)
-		idle:	read_data = cache_cw.mem_read;
+		idle:	read_data = cache_cw_read;
 		hit_detection: if(hit || ~load_dpipeline) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
-								read_data = cache_cw.mem_read && load_dpipeline;
+								read_data = cache_cw_read && load_dpipeline;
 							end
 							else begin
 								pmem_read = 1'b1;

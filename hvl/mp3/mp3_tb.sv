@@ -31,7 +31,8 @@ always @(posedge itf.clk) begin
 
     // CP1 halt address = 168
     // CP2 halt address = 154
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
+    // CP3 forwarding test halt address = b0 //this chacnges depending on number of no-ops in between instructions
+    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h000000b0)) begin
         good_count <= good_count + 1;
         if (good_count == 2)
             itf.halt <= 1'b1;

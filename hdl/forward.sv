@@ -1,5 +1,3 @@
-import rv32i_types::*;
-
 /*
 *Forward module based on the module described in the "Modified SP19 ECE411 MP3 Lecture" ppt posted to the _tutorials
 *branch on the ece 411 github page

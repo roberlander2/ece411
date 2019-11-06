@@ -67,6 +67,11 @@ rv32i_word memwb_alu_out;
 rv32i_word memwb_cmp_out;
 rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
+rv32i_word alu_in1;
+rv32i_word alu_in2;
+rv32i_word memex_forward;
+rv32i_word rs1_in;
+rv32i_word rs2_in;
 
 assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
@@ -85,6 +90,8 @@ logic forward_exmem_rs1;
 logic forward_memwb_rs1;
 logic forward_exmem_rs2;
 logic forward_memwb_rs2;
+logic forward_memwb_id_rs1;
+logic forward_memwb_id_rs2;
 
 forward exmem_rs1 (
 	.write(exmem_cw.load_regfile),
@@ -122,6 +129,24 @@ forward memwb_rs2 (
 	.fwd(forward_memwb_rs2)
 );
 
+forward memwb_id_rs1 (
+	.write(memwb_cw.load_regfile),
+	.valid_src(cw.rs1_valid),
+	.valid_dest(memwb_cw.rd_valid),
+	.src(cw.src1),
+	.dest(memwb_cw.dest),
+	.fwd(forward_memwb_id_rs1)
+);
+
+forward memwb_id_rs2 (
+	.write(memwb_cw.load_regfile),
+	.valid_src(cw.rs2_valid),
+	.valid_dest(memwb_cw.rd_valid),
+	.src(cw.src2),
+	.dest(memwb_cw.dest),
+	.fwd(forward_memwb_id_rs2)
+);
+
 //datapath modules
 //fetch
 pc PC(
@@ -151,8 +176,8 @@ control CONTROL(
 //execute
 alu ALU(
 	.aluop(idex_cw.aluop),
-	.a(alumux1_out),
-	.b(alumux2_out),
+	.a(alu_in1),
+	.b(alu_in2),
 	.f(alu_out)
 );
 
@@ -196,14 +221,14 @@ register idex_PC(
 register idex_RS1(
     .clk  (clk),
     .load (load_pipeline),
-    .in   (rs1_out),
+    .in   (rs1_in),
     .out  (idex_rs1_out)
 );
 
 register idex_RS2(
     .clk  (clk),
     .load (load_pipeline),
-    .in   (rs2_out),
+    .in   (rs2_in),
     .out  (idex_rs2_out)
 );
 
@@ -286,6 +311,42 @@ cw_register memwb_CW(
     .out  (memwb_cw)
 );
 
+//forwarding logic
+always_comb begin
+	unique case({forward_exmem_rs1, forward_memwb_rs1})
+		2'b00: alu_in1 = alumux1_out;
+		2'b01: alu_in1 = regfilemux_out;
+		2'b10: alu_in1 = memex_forward;
+		2'b11: alu_in1 = memex_forward;
+	endcase
+	
+	unique case({forward_exmem_rs2, forward_memwb_rs2})
+		2'b00: alu_in2 = alumux2_out;
+		2'b01: alu_in2 = regfilemux_out;
+		2'b10: alu_in2 = memex_forward;
+		2'b11: alu_in2 = memex_forward;
+	endcase
+	
+	 unique case (exmem_cw.regfilemux_sel)
+		 regfilemux::alu_out: memex_forward = exmem_alu_out;
+		 regfilemux::br_en: memex_forward = exmem_cmp_out;
+		 regfilemux::u_imm: memex_forward = exmem_cw.u_imm;
+		 regfilemux::pc_plus4: memex_forward = exmem_pc_out + 4;
+		 default: memex_forward = 32'hBAADBAAD;
+	 endcase
+	 
+	 unique case (forward_memwb_id_rs1)
+		1'b1: rs1_in = regfilemux_out;
+		1'b0: rs1_in = rs1_out;
+	 endcase
+	 
+	  unique case (forward_memwb_id_rs2)
+		1'b1: rs2_in = regfilemux_out;
+		1'b0: rs2_in = rs2_out;
+	 endcase
+end
+
+
 always_comb begin	 
 	 //fetch
     unique case (pcmux_sel)	
@@ -366,7 +427,6 @@ always_comb begin
 						  end
 	 default: `BAD_MUX_SEL;
 	 endcase
-	 
 end
 
 endmodule: datapath

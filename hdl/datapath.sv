@@ -340,7 +340,7 @@ always_comb begin
 		 regfilemux::br_en: memex_forward = exmem_cmp_out;
 		 regfilemux::u_imm: memex_forward = exmem_cw.u_imm;
 		 regfilemux::pc_plus4: memex_forward = exmem_pc_out + 4;
-		 default: memex_forward = 32'hBAADBAAD;
+		 default: memex_forward = 32'hXXXXXXXX;
 	 endcase
 	 
 	 unique case (forward_memwb_id_rs1)

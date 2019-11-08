@@ -23,7 +23,7 @@ _start:
 
     # Mispredict not-taken branch flushing tests
     not_taken_branches:
-    	add x1, x0, 1	# Also, test branching on forwarded value :)
+    	add x1, x0, 1	# Also, test branching on forwarded value :) WB->CMPin forwarding path needs to be added here
     	beq x0, x1, oof	# Don't take (the condition fails)
 
     	beq x0, x0, backward_br_nt # Take

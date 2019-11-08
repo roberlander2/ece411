@@ -320,10 +320,18 @@ cw_register memwb_CW(
 //forwarding logic
 always_comb begin
 	unique case({forward_exmem_rs1, forward_memwb_rs1})
-		2'b00: alu_in1 = alumux1_out;
-		2'b01: alu_in1 = regfilemux_out;
-		2'b10: alu_in1 = memex_forward;
-		2'b11: alu_in1 = memex_forward;
+		2'b00: begin
+					alu_in1 = alumux1_out;
+				 end
+		2'b01: begin
+					alu_in1 = regfilemux_out;
+				 end
+		2'b10: begin
+					alu_in1 = memex_forward;
+				 end
+		2'b11: begin
+					alu_in1 = memex_forward;
+				 end
 	endcase
 	
 	unique case({forward_exmem_rs2, forward_memwb_rs2})

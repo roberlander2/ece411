@@ -61,7 +61,7 @@ function void set_defaults();
 	cw.rs1_valid = 1'b0;
 	cw.rs2_valid = 1'b0;
 	cw.rd_valid = 1'b0;
-	cw.flush = flush;
+	cw.flush = 1'b0;
 endfunction
 
 always_comb begin : opcode_actions
@@ -80,6 +80,7 @@ always_comb begin : opcode_actions
 	cw.dest = data[11:7];
 	
 	set_defaults();
+	cw.flush = flush;
 	
 	unique case(cw.opcode)
 		op_lui: begin

@@ -5,12 +5,15 @@ Determine state by observing the opcode of the given instruction.
 */
 module control (
 	input rv32i_word data,
+	input flush,
 	output control_word_t cw
 );
 
 function void loadRegfile(regfilemux::regfilemux_sel_t sel);
-	cw.load_regfile = 1'b1;
-	cw.regfilemux_sel = sel;
+	if(~flush) begin
+		cw.load_regfile = 1'b1;
+		cw.regfilemux_sel = sel;
+	end
 endfunction
 
 function void loadMAR(marmux::marmux_sel_t sel);
@@ -58,7 +61,7 @@ function void set_defaults();
 	cw.rs1_valid = 1'b0;
 	cw.rs2_valid = 1'b0;
 	cw.rd_valid = 1'b0;
-	cw.flush = 1'b0;
+	cw.flush = flush;
 endfunction
 
 always_comb begin : opcode_actions
@@ -107,7 +110,7 @@ always_comb begin : opcode_actions
 				  end
 		op_load: begin
 						loadMAR(marmux::alu_out);
-						cw.mem_read = 1'b1;
+						if(~flush) cw.mem_read = 1'b1;
 						setALU(alumux::rs1_out, alumux::i_imm, 1'b1);
 						setRDvalid();
 						setRS1valid();
@@ -123,7 +126,7 @@ always_comb begin : opcode_actions
 		op_store: begin
 						loadMAR(marmux::alu_out);
 						setALU(alumux::rs1_out, alumux::s_imm, 1'b1);
-						cw.mem_write = 1'b1;
+						if(~flush) cw.mem_write = 1'b1;
 						setRS1valid();
 						setRS2valid();
 						unique case (store_funct3_t'(cw.funct3))

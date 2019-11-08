@@ -44,6 +44,9 @@ control_word_t cw;
 rv32i_word alu_out;
 logic cmp_out;
 logic br_en;
+logic br_en_flush;
+logic br_en_flush2;
+logic flush;
 rv32i_word rs1_out;
 rv32i_word rs2_out;
 rv32i_word pc_out;
@@ -78,9 +81,13 @@ assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
 assign load_pc = load_pipeline;
 assign br_en = (idex_cw.opcode == op_br) && cmp_out; //execute stage 
+assign br_en_flush = (exmem_cw.opcode == op_br) && exmem_cmp_out; //memory stage 
+assign br_en_flush2 = (memwb_cw.opcode == op_br) && memwb_cmp_out;
+assign flush = br_en || br_en_flush;
 assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
 assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
-assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
+//use normal pc sel if neither of the two instructions in front is a branch
+assign pcmux_sel = (br_en_flush || br_en_flush2) ? pcmux::pcmux_sel_t'(2'b0) : pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -170,6 +177,7 @@ regfile REGFILE(
 
 control CONTROL(
 	.data(inst),
+	.flush(flush),
 	.cw(cw)
 );
 

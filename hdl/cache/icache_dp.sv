@@ -19,7 +19,8 @@ module icache_dp #(
 	 input set_valid0,
 	 input mem_read,
 	 input read_data,
-//	 input addr_sel,
+	 input set_rdata,
+	 input read_rdata,
 	 input load_pipeline,
 	 input load_dpipeline,
 	 input mem_resp,
@@ -47,13 +48,15 @@ logic read_high;
 logic valid_in;
 logic lru_in;
 
+logic [s_line-1:0] latched_rdata;
+
 cache_cw_t pipe_cache_cw;
 cache_cw_t cache_cw;
 
 assign pipe_cache_cw_addr = pipe_cache_cw.address;
 assign cache_cw_read = cache_cw.mem_read;
 
-assign index = cache_cw.address[7:5]; // addr_sel ? pipe_cache_cw.address[7:5] : mem_address[7:5];
+assign index = cache_cw.address[7:5];
 assign read_high = 1'b1;
 assign valid_in = 1'b1;
 
@@ -122,11 +125,18 @@ cache_cw_reg CW(
 	.out(pipe_cache_cw)
 );
 
+register #(s_line) held_rdata (
+    .clk(clk),
+    .load(set_rdata),
+    .in(pmem_rdata),
+    .out(latched_rdata)
+);
+
 
 //cache combinational logic and muxes -- pipeline stage 2
 assign lru_in = (set_valid0 || set_valid1) ? set_valid0 : tag0_hit;
-assign tag1_hit = (tag_out[1] == pipe_cache_cw.address[31:8]) && (valid_out1 == 1'b1);
-assign tag0_hit = (tag_out[0] == pipe_cache_cw.address[31:8]) && (valid_out0 == 1'b1);
+assign tag1_hit = (tag_out[1] == pipe_cache_cw.address[31:8]) && valid_out1 && ~read_rdata;
+assign tag0_hit = (tag_out[0] == pipe_cache_cw.address[31:8]) && valid_out0 && ~read_rdata;
 assign hit = tag1_hit || tag0_hit;
 assign write_en_mux_out[0] = {32{load_data[0]}};
 assign write_en_mux_out[1] = {32{load_data[1]}};
@@ -139,16 +149,13 @@ assign pmem_address = pipe_cache_cw.address;
 
 always_comb begin
 	unique case (hit)
-        bus_adapter_mux::data: begin
-											if({tag1_hit, tag0_hit} == 2'b10) begin
-												mem_rdata256 = data_out[1];
-											end
-											else begin
-												mem_rdata256 = data_out[0];
-											end
-										 end
-		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = pmem_rdata;
-        default: mem_rdata256 = pmem_rdata;
+        bus_adapter_mux::data: unique case (tag0_hit)
+											1'b0: mem_rdata256 = data_out[1];
+											1'b1: mem_rdata256 = data_out[0];
+											default: mem_rdata256 = data_out[0];
+										 endcase
+		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = read_rdata ? latched_rdata : pmem_rdata;
+        default: mem_rdata256 = read_rdata ? latched_rdata : pmem_rdata;
     endcase
 end
 

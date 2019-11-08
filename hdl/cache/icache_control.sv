@@ -17,7 +17,7 @@ module icache_control(
 	output logic load_lru,
 	output logic read_data,
 	output logic load_pipeline
-//	output logic addr_sel
+	output logic hold_load
 );
 
 function void set_defaults();
@@ -31,7 +31,7 @@ function void set_defaults();
 	mem_resp = 1'b0;
 	pmem_read = 1'b0;
 	load_pipeline = 1'b1;
-//	addr_sel = 1'b0;
+	hold_load = 1'b0;
 endfunction
 
 enum int unsigned {
@@ -61,11 +61,11 @@ always_comb begin
 											next_state = hit ? (cache_cw_read ? hit_detection : idle) : load;
 								end
 		load: begin
-					if(~pmem_resp)
+					if(~pmem_resp || (~load_dpipeline && mem_resp))
 						next_state = load;
 					else
 //						next_state = write_data;
-						next_state = hit_detection;
+						next_state = cache_cw_read ? hit_detection : idle;
 				end
 //		write_data: next_state = hit_detection;
 	default: next_state = idle;
@@ -102,8 +102,15 @@ always_comb begin
 						load_lru = 1'b1;
 					end
 					else begin
-						pmem_read = 1'b1;
-						load_pipeline  = 1'b0;
+						if (~load_dpipeline && mem_resp) begin
+							mem_resp = 1'b1;
+							read_data = cache_cw_read && load_dpipeline;;
+							load_lru = 1'b1;
+						end
+						else begin
+							pmem_read = 1'b1;
+							load_pipeline  = 1'b0;
+						end
 					end
 				end
 //		write_data:	begin

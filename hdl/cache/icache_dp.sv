@@ -19,7 +19,7 @@ module icache_dp #(
 	 input set_valid0,
 	 input mem_read,
 	 input read_data,
-	 input addr_sel,
+//	 input addr_sel,
 	 input load_pipeline,
 	 input load_dpipeline,
 	 input mem_resp,
@@ -53,7 +53,7 @@ cache_cw_t cache_cw;
 assign pipe_cache_cw_addr = pipe_cache_cw.address;
 assign cache_cw_read = cache_cw.mem_read;
 
-assign index = addr_sel ? pipe_cache_cw.address[7:5] : mem_address[7:5];
+assign index = cache_cw.address[7:5]; // addr_sel ? pipe_cache_cw.address[7:5] : mem_address[7:5];
 assign read_high = 1'b1;
 assign valid_in = 1'b1;
 
@@ -108,7 +108,7 @@ array LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.rindex(index),
+	.rindex(pipe_cache_cw.address[7:5]),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
@@ -124,7 +124,7 @@ cache_cw_reg CW(
 
 
 //cache combinational logic and muxes -- pipeline stage 2
-assign lru_in = tag0_hit;
+assign lru_in = (set_valid0 || set_valid1) ? set_valid0 : tag0_hit;
 assign tag1_hit = (tag_out[1] == pipe_cache_cw.address[31:8]) && (valid_out1 == 1'b1);
 assign tag0_hit = (tag_out[0] == pipe_cache_cw.address[31:8]) && (valid_out0 == 1'b1);
 assign hit = tag1_hit || tag0_hit;

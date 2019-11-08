@@ -4,11 +4,11 @@ import rv32i_types::*;
 `define HIT_100 1
 `define HIT_50 2
 `define HIT_6 3
-`define HIT_RATE `HIT_50
+`define HIT_RATE `HIT_0
 
 `define ZERO_MBE 0
 
-`define NUM_TESTS 100000
+`define NUM_TESTS 1000
 `define VERBOSE 1
 
 module random_icache_tb;
@@ -167,22 +167,26 @@ class RandomCacheInput;
         set = dut.icache_datapath.pipe_cache_cw.address[7:5];
         lru_out = dut.icache_datapath.LRU.data[set];
         if (!lru_out) begin
-            assert((dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]) &&
-                   (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid0.data[set])
+            assert((dut.icache_datapath.line[0].datain == memory.mem[memory.internal_address]) && (dut.icache_datapath.line[0].windex == set) && (dut.icache_datapath.line[0].write_en == 32'hFFFFFFFF) &&
+                   (dut.icache_datapath.tag[0].datain == dut.icache_datapath.pipe_cache_cw.address[31:8]) && (dut.icache_datapath.tag[0].windex == set) && (dut.icache_datapath.tag[0].load == 1'b1) &&
+                   dut.icache_datapath.valid0.datain == 1'b1 && dut.icache_datapath.valid0.load == 1'b1 && dut.icache_datapath.valid0.windex == set)
                 else begin
-                  $display("%1b, %1b, %1b", (dut.icache_datapath.line[0].data[set] == memory.mem[memory.internal_address]),
-                         (dut.icache_datapath.tag[0].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid0.data[set]);
+                  $display("%1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b", (dut.icache_datapath.line[0].datain == memory.mem[memory.internal_address]), (dut.icache_datapath.line[0].windex == set), (dut.icache_datapath.line[0].write_en == 32'hFFFFFFFF),
+                         (dut.icache_datapath.tag[0].datain == dut.icache_datapath.pipe_cache_cw.address[31:8]), (dut.icache_datapath.tag[0].windex == set), (dut.icache_datapath.tag[0].load == 1'b1),
+                         dut.icache_datapath.valid0.datain == 1'b1, dut.icache_datapath.valid0.load == 1'b1, dut.icache_datapath.valid0.windex == set);
                   $error("Failure on cache miss into way 0");
                   return 0;
                 end
         end
         else if (lru_out) begin
-            assert((dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]) &&
-                   (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]) && dut.icache_datapath.valid1.data[set])
+            assert((dut.icache_datapath.line[1].datain == memory.mem[memory.internal_address]) && (dut.icache_datapath.line[1].windex == set) && (dut.icache_datapath.line[1].write_en == 32'hFFFFFFFF) &&
+                   (dut.icache_datapath.tag[1].datain == dut.icache_datapath.pipe_cache_cw.address[31:8]) && (dut.icache_datapath.tag[1].windex == set) && (dut.icache_datapath.tag[1].load == 1'b1) &&
+                   dut.icache_datapath.valid1.datain == 1'b1 && dut.icache_datapath.valid1.load == 1'b1 && dut.icache_datapath.valid1.windex == set)
                 else begin
-                  $display("%1b, %1b, %1b", (dut.icache_datapath.line[1].data[set] == memory.mem[memory.internal_address]),
-                         (dut.icache_datapath.tag[1].data[set] == dut.icache_datapath.pipe_cache_cw.address[31:8]), dut.icache_datapath.valid1.data[set]);
-                  $error("Failure on cache miss into way 1");
+                  $display("%1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b, %1b", (dut.icache_datapath.line[1].datain == memory.mem[memory.internal_address]), (dut.icache_datapath.line[1].windex == set), (dut.icache_datapath.line[1].write_en == 32'hFFFFFFFF),
+                         (dut.icache_datapath.tag[1].datain == dut.icache_datapath.pipe_cache_cw.address[31:8]), (dut.icache_datapath.tag[1].windex == set), (dut.icache_datapath.tag[1].load == 1'b1),
+                         dut.icache_datapath.valid1.datain == 1'b1, dut.icache_datapath.valid1.load == 1'b1, dut.icache_datapath.valid1.windex == set);
+                  $error("Failure on cache miss into way 0");
                   return 0;
                 end
         end
@@ -194,7 +198,6 @@ class RandomCacheInput;
         hit1 = (dut.icache_datapath.pipe_cache_cw.address[31:8] == cache_addr1[31:8]) && dut.icache_datapath.valid1.data[set];
         // $display("pipe_address: %6h, cache_addr0: %6h, valid0: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr0[31:8], dut.icache_datapath.valid0.data[set], set);
         // $display("pipe_address: %6h, cache_addr1: %6h, valid1: %1b, set: %1h", dut.icache_datapath.pipe_cache_cw.address[31:8], cache_addr1[31:8], dut.icache_datapath.valid1.data[set], set);
-        hit_count--;
         return 1;
     endfunction
 endclass
@@ -230,14 +233,14 @@ end
 always @(posedge itf.clk iff (itf.pmem_read && itf.pmem_write))
     $error("@%0t TOP: Simultaneous memory read and write detected", $time);
 
-always_ff @(negedge itf.clk iff dut.icache_ctrl.state.name == "write_data") begin
+always_ff @(negedge itf.clk iff (mem_resp_out && dut.icache_ctrl.state.name == "load" && dut.icache_ctrl.next_state.name == "hit_detection")) begin
     if (!cpu_generator.check_miss_correct()) begin
       $error("A cache correctness error occurred on a miss");
       $finish;
     end
 end
 
-always_ff @(negedge itf.clk iff mem_resp_out) begin
+always_ff @(negedge itf.clk iff (mem_resp_out && dut.icache_ctrl.state.name == "hit_detection")) begin
     if (!cpu_generator.check_hit_correct()) begin
         $error("A cache correctness error occurred on a hit");
         $finish;

@@ -31,7 +31,7 @@ logic set_valid0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
-logic addr_sel;
+//logic addr_sel;
 logic mem_resp;
 
 logic [s_line-1:0] mem_rdata256;

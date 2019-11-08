@@ -38,7 +38,7 @@ always @(posedge itf.clk) begin
     timeout <= timeout - 1;
 end
 
-Simulataneous Memory Read and Write
+// Simulataneous Memory Read and Write
 always @(posedge itf.clk iff (itf.pmem_read && itf.pmem_write))
     $error("@%0t TOP: Simultaneous memory read and write detected", $time);
 

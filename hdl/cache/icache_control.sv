@@ -16,8 +16,8 @@ module icache_control(
 	output logic set_valid0,
 	output logic load_lru,
 	output logic read_data,
-	output logic load_pipeline,
-	output logic addr_sel
+	output logic load_pipeline
+//	output logic addr_sel
 );
 
 function void set_defaults();
@@ -31,14 +31,14 @@ function void set_defaults();
 	mem_resp = 1'b0;
 	pmem_read = 1'b0;
 	load_pipeline = 1'b1;
-	addr_sel = 1'b0;
+//	addr_sel = 1'b0;
 endfunction
 
 enum int unsigned {
 	idle,
 	hit_detection,
-	load,
-	write_data
+	load
+//	write_data
 } state, next_state;
 
 always_ff @(posedge clk) begin
@@ -64,9 +64,10 @@ always_comb begin
 					if(~pmem_resp)
 						next_state = load;
 					else
-						next_state = write_data;
+//						next_state = write_data;
+						next_state = hit_detection;
 				end
-		write_data: next_state = hit_detection;
+//		write_data: next_state = hit_detection;
 	default: next_state = idle;
 	endcase
 end
@@ -84,11 +85,11 @@ always_comb begin
 							else begin
 								pmem_read = 1'b1;
 								load_pipeline  = 1'b0;
-								addr_sel = 1'b1;
+//								addr_sel = 1'b1;
 							end
 		load: begin
-					load_pipeline  = 1'b0;
-					addr_sel = 1'b1;
+//					load_pipeline  = 1'b0;
+//					addr_sel = 1'b1;
 					if(pmem_resp) begin
 						load_data[0] = ~lru_out;
 						load_tag[0] = ~lru_out;
@@ -96,16 +97,20 @@ always_comb begin
 						load_tag[1] = lru_out;
 						set_valid0 = ~lru_out;
 						set_valid1 = lru_out;
+						mem_resp = 1'b1;
+						read_data = cache_cw_read && load_dpipeline;;
+						load_lru = 1'b1;
 					end
 					else begin
 						pmem_read = 1'b1;
+						load_pipeline  = 1'b0;
 					end
 				end
-		write_data:	begin
-							load_pipeline = 1'b0;
-							read_data = 1'b1;
-							addr_sel = 1'b1;
-						end
+//		write_data:	begin
+//							load_pipeline = 1'b0;
+//							read_data = 1'b1;
+//							addr_sel = 1'b1;
+//						end
 	endcase
 end
 

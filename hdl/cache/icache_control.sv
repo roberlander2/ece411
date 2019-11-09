@@ -50,24 +50,18 @@ end
 always_comb begin
 	//next state logic
 	unique case(state)
-		idle: begin
-					if(cache_cw_read)
-						next_state = hit_detection;
-					else
-						next_state = idle;
-				end
-		hit_detection: begin
-									if (~load_dpipeline && mem_resp)
-											next_state = hit_detection;
-									else
-											next_state = hit ? (cache_cw_read ? hit_detection : idle) : load;
-								end
-		load: begin
-					if(~pmem_resp)
-						next_state = load;
-					else
-						next_state = load_dpipeline ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
-				end
+		idle: if(cache_cw_read)
+					next_state = hit_detection;
+				else
+					next_state = idle;
+		hit_detection: if (~load_dpipeline && mem_resp)
+								next_state = hit_detection;
+							else
+								next_state = hit ? (cache_cw_read ? hit_detection : idle) : load;
+		load: if(~pmem_resp)
+					next_state = load;
+				else
+					next_state = load_dpipeline ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
 		hold_rdata: next_state = load_dpipeline ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
 	default: next_state = idle;
 	endcase
@@ -85,7 +79,7 @@ always_comb begin
 							end
 							else begin
 								pmem_read = 1'b1;
-								load_pipeline  = 1'b0;;
+								load_pipeline  = 1'b0;
 							end
 		load: begin
 					if(pmem_resp) begin
@@ -95,9 +89,9 @@ always_comb begin
 						load_tag[1] = lru_out;
 						set_valid0 = ~lru_out;
 						set_valid1 = lru_out;
+						load_lru = 1'b1;
 						mem_resp = 1'b1;
 						read_data = cache_cw_read && load_dpipeline;
-						load_lru = 1'b1;
 						set_rdata = 1'b1;
 					end
 					else begin

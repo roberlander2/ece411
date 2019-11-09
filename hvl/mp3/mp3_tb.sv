@@ -24,7 +24,7 @@ end
 always @(posedge itf.clk) begin
     // CP1 halt address = 168
     // CP2 halt address = 154
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000168)) begin
+    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h00000154)) begin
         good_count <= good_count + 1;
         if (good_count == 1)
             itf.halt <= 1'b1;

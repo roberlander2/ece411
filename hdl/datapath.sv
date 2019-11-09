@@ -22,6 +22,8 @@ logic load_pc;
 
 logic is_jalr;
 logic is_jal;
+logic is_jalr_mem;
+logic is_jal_mem;
 
 //mux outputs
 rv32i_word pcmux_out;
@@ -71,6 +73,8 @@ rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
 rv32i_word alu_in1;
 rv32i_word alu_in2;
+rv32i_word cmp_in1;
+rv32i_word cmp_in2;
 rv32i_word memex_forward;
 rv32i_word rs1_in;
 rv32i_word rs2_in;
@@ -81,9 +85,11 @@ assign iread = 1'b1;
 assign load_pc = load_pipeline;
 assign br_en = ((idex_cw.opcode == op_br) && cmp_out) && ~idex_cw.flush; //execute stage 
 assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
-assign flush = br_en || br_en_flush;
-assign is_jalr = (idex_cw.opcode == op_jalr) && 1'b1;
-assign is_jal = (idex_cw.opcode == op_jal) && 1'b1;
+assign flush = br_en || br_en_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem;
+assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
+assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
+assign is_jalr_mem = (exmem_cw.opcode == op_jalr) && ~exmem_cw.flush;
+assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 
@@ -188,8 +194,8 @@ alu ALU(
 );
 
 cmp CMP (
-	.a(idex_rs1_out),
-	.b(cmpmux_out),
+	.a(cmp_in1), //idex_rs1_out
+	.b(cmp_in2), //cmpmux_out
 	.cmpop(idex_cw.cmpop),
 	.br_en(cmp_out)
 );
@@ -322,23 +328,39 @@ always_comb begin
 	unique case({forward_exmem_rs1, forward_memwb_rs1})
 		2'b00: begin
 					alu_in1 = alumux1_out;
+					cmp_in1 = idex_rs1_out;
 				 end
 		2'b01: begin
 					alu_in1 = regfilemux_out;
+					cmp_in1 = regfilemux_out;
 				 end
 		2'b10: begin
 					alu_in1 = memex_forward;
+					cmp_in1 = memex_forward;
 				 end
 		2'b11: begin
 					alu_in1 = memex_forward;
+					cmp_in1 = memex_forward;
 				 end
 	endcase
 	
 	unique case({forward_exmem_rs2, forward_memwb_rs2})
-		2'b00: alu_in2 = alumux2_out;
-		2'b01: alu_in2 = regfilemux_out;
-		2'b10: alu_in2 = memex_forward;
-		2'b11: alu_in2 = memex_forward;
+		2'b00: begin
+					alu_in2 = alumux2_out;
+					cmp_in2 = cmpmux_out;
+				 end
+		2'b01: begin
+					alu_in2 = regfilemux_out;
+					cmp_in2 = regfilemux_out;
+				 end
+		2'b10: begin
+					alu_in2 = memex_forward;
+					cmp_in2 = memex_forward;
+				 end
+		2'b11: begin
+					alu_in2 = memex_forward;
+					cmp_in2 = memex_forward;
+				end
 	endcase
 	
 	 unique case (exmem_cw.regfilemux_sel)

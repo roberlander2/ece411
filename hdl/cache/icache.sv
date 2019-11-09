@@ -31,14 +31,15 @@ logic set_valid0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
-logic addr_sel;
+logic set_rdata;
+logic read_rdata;
 logic mem_resp;
 
 logic [s_line-1:0] mem_rdata256;
-cache_cw_t pipe_cache_cw;
-cache_cw_t cache_cw;
+rv32i_word pipe_cache_cw_addr;
+logic cache_cw_read;
 
-assign mem_rdata = mem_rdata256[(32*pipe_cache_cw.address[4:2]) +: 32];
+assign mem_rdata = mem_rdata256[(32*pipe_cache_cw_addr[4:2]) +: 32];
 
 icache_control icache_ctrl (.*);
 

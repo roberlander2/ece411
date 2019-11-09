@@ -89,7 +89,7 @@ always_comb begin
 	set_defaults();
 	unique case(state)
 		idle:	read_data = cache_cw.mem_read | cache_cw.mem_write;
-		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
+		hit_detection: if(hit || ~load_ipipeline) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
 								read_data = (cache_cw.mem_read | cache_cw.mem_write) && load_ipipeline;

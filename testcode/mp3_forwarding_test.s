@@ -57,6 +57,14 @@ _start:
 
       beq x3, x2, oof
 
+      # WB -> MEM forwarding test -- add this path regfilemux -> mem_address and regfilemux_out -> mem_wdata -- This maybe works??
+      add x3, x1, 1 #2
+      la x8, TEST
+      sw  x3, 0(x8)
+      lw  x4, TEST
+
+      bne x4, x3, oof
+
       lw x7, GOOD
 
 halt:                 # Infinite loop to keep the processor
@@ -110,6 +118,7 @@ BAD2:         .word 0x22BADBAD
 BAD3:         .word 0x33BADBAD
 GOOD:         .word 0x600D600D
 FULL:	        .word 0xFFFFFFFF
+TEST:         .word 0x00000000
 	nop
 	nop
 	nop

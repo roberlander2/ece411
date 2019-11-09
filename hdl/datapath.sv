@@ -103,6 +103,7 @@ logic forward_exmem_rs2;
 logic forward_memwb_rs2;
 logic forward_memwb_id_rs1;
 logic forward_memwb_id_rs2;
+logic forward_wb2mem;
 
 forward exmem_rs1 (
 	.write(exmem_cw.load_regfile),
@@ -156,6 +157,15 @@ forward memwb_id_rs2 (
 	.src(cw.src2),
 	.dest(memwb_cw.dest),
 	.fwd(forward_memwb_id_rs2)
+);
+
+forward wbTomem (
+	.write(memwb_cw.load_regfile),
+	.valid_src(exmem_cw.rs2_valid),
+	.valid_dest(memwb_cw.rd_valid),
+	.src(exmem_cw.src2),
+	.dest(memwb_cw.dest),
+	.fwd(forward_wb2mem)
 );
 
 //datapath modules

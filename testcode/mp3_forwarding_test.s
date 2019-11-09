@@ -50,12 +50,6 @@ _start:
 
     	bne x3, x2, oof2
 
-      # Forwarding contention test
-      add x2, x0, 1
-      add x2, x0, 2
-      add x3, x2, 1 # x3 should be 3
-
-      beq x3, x2, oof
 
       # WB -> MEM forwarding test -- add this path regfilemux -> mem_address and regfilemux_out -> mem_wdata -- This maybe works??
       add x3, x1, 1 #2
@@ -64,6 +58,13 @@ _start:
       lw  x4, TEST
 
       bne x4, x3, oof
+
+      # Forwarding contention test
+      add x2, x0, 1
+      add x2, x0, 2
+      add x3, x2, 1 # x3 should be 3
+
+      beq x3, x2, oof
 
       lw x7, GOOD
 

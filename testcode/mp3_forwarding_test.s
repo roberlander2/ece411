@@ -99,7 +99,7 @@ oof2:
 backward_br_nt:
   beq x0, x1, oof	# Don't take
 
-  beq x0, x0, forwarding_tests	# Take
+  beq x0, x0, halt	# Take
 
 
 .section .rodata

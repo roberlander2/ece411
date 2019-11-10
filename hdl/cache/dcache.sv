@@ -41,14 +41,20 @@ logic clear_dirty0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
-logic addr_sel;
+logic set_rdata;
+logic read_rdata;
 logic mem_resp;
 
 logic [s_line-1:0] mem_wdata256;
 logic [s_line-1:0] mem_rdata256;
 logic [s_mask-1:0] mem_byte_enable256;
+
 cache_cw_t pipe_cache_cw;
-cache_cw_t cache_cw;
+logic cache_cw_read;
+logic cache_cw_write;
+logic pipe_cache_cw_write;
+
+assign pipe_cache_cw_write = pipe_cache_cw.mem_write;
 
 dcache_control dcache_ctrl (.*);
 

@@ -78,6 +78,7 @@ rv32i_word cmp_in2;
 rv32i_word memex_forward;
 rv32i_word rs1_in;
 rv32i_word rs2_in;
+rv32i_word mem_wdata_forward;
 
 assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
@@ -232,15 +233,12 @@ cmp CMP (
 
 //memory
 reg_mem_data_out MEM_DATA_OUT(
-	.in(exmem_rs2_out),
+	.in(mem_wdata_forward),
 	.funct3(exmem_cw.funct3),
 	.out(mem_wdata)
 );
 
 //write back
-
-
-
 
 
 //Pipeline Registers -use leading <stage>_ to denote pipeline register
@@ -355,6 +353,10 @@ cw_register memwb_CW(
 
 //forwarding logic
 always_comb begin
+	unique case (forward_wb2mem)
+		1'b0: mem_wdata_forward = exmem_rs2_out;
+		1'b1: mem_wdata_forward = regfilemux_out;
+	endcase
 	unique case({forward_exmem_rs1, forward_memwb_rs1})
 		2'b00: begin
 					alu_in1 = alumux1_out;

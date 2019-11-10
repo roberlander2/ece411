@@ -14,7 +14,8 @@ module datapath
 	output rv32i_word mem_address,
 	output rv32i_word mem_wdata,
 	output rv32i_word inst_addr, //needs to be outputted to the I-Cache
-	output logic [3:0] mem_byte_enable
+	output logic [3:0] mem_byte_enable,
+	output logic stall
 );
 
 //loads
@@ -43,6 +44,7 @@ marmux::marmux_sel_t marmux_sel;
 
 //module outputs
 control_word_t cw;
+control_word_t cw_mux_out;
 rv32i_word alu_out;
 logic cmp_out;
 logic br_en;
@@ -107,6 +109,8 @@ logic forward_memwb_id_rs2;
 logic forward_wb2mem;
 logic stall_rs1;
 logic stall_rs2;
+
+assign stall = (stall_rs1 || stall_rs2 ) && (idex_cw.opcode == op_load);
 
 forward exmem_rs1 (
 	.write(exmem_cw.load_regfile),
@@ -174,18 +178,18 @@ forward wbTomem (
 forward stallRS1 (
 	.write(idex_cw.load_regfile),
 	.valid_src(cw.rs1_valid),
-	.valid_dest(exmem_cw.rd_valid),
+	.valid_dest(idex_cw.rd_valid),
 	.src(cw.src1),
-	.dest(exmem_cw.dest),
+	.dest(idex_cw.dest),
 	.fwd(stall_rs1)
 );
 
 forward stallRS2 (
 	.write(idex_cw.load_regfile),
 	.valid_src(cw.rs2_valid),
-	.valid_dest(exmem_cw.rd_valid),
+	.valid_dest(idex_cw.rd_valid),
 	.src(cw.src2),
-	.dest(exmem_cw.dest),
+	.dest(idex_cw.dest),
 	.fwd(stall_rs2)
 );
 
@@ -193,7 +197,7 @@ forward stallRS2 (
 //fetch
 pc PC(
 	.clk(clk),
-	.load(load_pc),
+	.load(load_pc && ~stall),
 	.in(pcmux_out),
 	.out(pc_out)
 );
@@ -245,7 +249,7 @@ reg_mem_data_out MEM_DATA_OUT(
 //IF/ID
 register ifid_PC(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && ~stall),
     .in   (pc_out),
     .out  (ifid_pc_out)
 );
@@ -275,7 +279,7 @@ register idex_RS2(
 cw_register idex_CW(
     .clk  (clk),
     .load (load_pipeline),
-    .in   (cw),
+    .in   (cw_mux_out),
     .out  (idex_cw)
 );
 
@@ -395,23 +399,28 @@ always_comb begin
 				end
 	endcase
 	
-	 unique case (exmem_cw.regfilemux_sel)
-		 regfilemux::alu_out: memex_forward = exmem_alu_out;
-		 regfilemux::br_en: memex_forward = exmem_cmp_out;
-		 regfilemux::u_imm: memex_forward = exmem_cw.u_imm;
-		 regfilemux::pc_plus4: memex_forward = exmem_pc_out + 4;
-		 default: memex_forward = 32'hXXXXXXXX;
-	 endcase
+	unique case (exmem_cw.regfilemux_sel)
+		regfilemux::alu_out: memex_forward = exmem_alu_out;
+		regfilemux::br_en: memex_forward = exmem_cmp_out;
+		regfilemux::u_imm: memex_forward = exmem_cw.u_imm;
+		regfilemux::pc_plus4: memex_forward = exmem_pc_out + 4;
+		default: memex_forward = 32'hXXXXXXXX;
+	endcase
 	 
-	 unique case (forward_memwb_id_rs1)
+	unique case (forward_memwb_id_rs1)
 		1'b1: rs1_in = regfilemux_out;
 		1'b0: rs1_in = rs1_out;
-	 endcase
+	endcase
 	 
-	  unique case (forward_memwb_id_rs2)
+	unique case (forward_memwb_id_rs2)
 		1'b1: rs2_in = regfilemux_out;
 		1'b0: rs2_in = rs2_out;
-	 endcase
+	endcase
+	 
+	unique case (stall)
+		1'b0: cw_mux_out = cw;
+		1'b1: cw_mux_out = 0;
+	endcase
 end
 
 

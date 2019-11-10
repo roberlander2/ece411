@@ -47,35 +47,35 @@ forwarding_tests:
 
 	bne x3, x4, oof	# Also, test branching on 2 forwarded values :)
 
-	# # MEM -> EX forwarding with stall -- requires stalling logic
-	# lw x1, NOPE
-	# lw x1, A
-	# add x5, x1, x0		# Necissary forwarding stall
-	#
-	# bne x5, x1, oof
-	#
+	# MEM -> EX forwarding with stall -- requires stalling logic
+	lw x1, NOPE
+	lw x1, A
+	add x5, x1, x0		# Necissary forwarding stall
+
+	bne x5, x1, oof
+
 	# WB -> MEM forwarding test -- add this path regfilemux -> mem_address and regfilemux_out -> mem_wdata
 	add x3, x1, 1 #2
 	la x8, TEST
 	sw  x3, 0(x8)
 	lw  x4, TEST
-	nop
+
 	bne x4, x3, oof
-	#
-	#
+
+
 	# Half word forwarding test -- should not require stalling logic
 	lh  x2, FULL
 	add x3, x0, -1
 
 	bne x3, x2, oof
-	#
-	# # Cache miss control test -- requires stalling logic
-	# add x4, x0, 3
-	# lw  x2, B		# Cache miss
-	# add x3, x2, 1	# Try to forward from cache miss load
-	#
-	# bne x4, x3, oof
-	#
+
+	# Cache miss control test -- requires stalling logic
+	add x4, x0, 3
+	lw  x2, B		# Cache miss
+	add x3, x2, 1	# Try to forward from cache miss load
+
+	bne x4, x3, oof
+
 	# Forwarding contention test
 	add x2, x0, 1
 	add x2, x0, 2

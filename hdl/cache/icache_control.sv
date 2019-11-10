@@ -8,6 +8,7 @@ module icache_control(
 	input tag0_hit,
 	input cache_cw_read,
 	input load_dpipeline,
+	input stall,
 	output logic pmem_read,
 	output logic mem_resp,
 	output logic [1:0] load_data,
@@ -57,7 +58,7 @@ always_comb begin
 						next_state = idle;
 				end
 		hit_detection: begin
-									if (~load_dpipeline && mem_resp)
+									if ((~load_dpipeline  || stall) && mem_resp)
 											next_state = hit_detection;
 									else
 											next_state = hit ? (cache_cw_read ? hit_detection : idle) : load;
@@ -66,9 +67,9 @@ always_comb begin
 					if(~pmem_resp)
 						next_state = load;
 					else
-						next_state = load_dpipeline ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
+						next_state = (load_dpipeline && ~stall) ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
 				end
-		hold_rdata: next_state = load_dpipeline ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
+		hold_rdata: next_state = (load_dpipeline && ~stall) ? (cache_cw_read ? hit_detection : idle) : hold_rdata;
 	default: next_state = idle;
 	endcase
 end
@@ -78,10 +79,10 @@ always_comb begin
 	set_defaults();
 	unique case(state)
 		idle:	read_data = cache_cw_read;
-		hit_detection: if(hit || ~load_dpipeline) begin  //do nothing special in the  mem_read case
+		hit_detection: if(hit || ~load_dpipeline || stall) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
-								read_data = cache_cw_read && load_dpipeline;
+								read_data = cache_cw_read && load_dpipeline && ~stall;
 							end
 							else begin
 								pmem_read = 1'b1;
@@ -96,7 +97,7 @@ always_comb begin
 						set_valid0 = ~lru_out;
 						set_valid1 = lru_out;
 						mem_resp = 1'b1;
-						read_data = cache_cw_read && load_dpipeline;
+						read_data = cache_cw_read && load_dpipeline && ~stall;
 						load_lru = 1'b1;
 						set_rdata = 1'b1;
 					end
@@ -108,7 +109,7 @@ always_comb begin
 		hold_rdata:	begin
 							mem_resp = 1'b1;
 							read_rdata = 1'b1;
-							read_data = cache_cw_read && load_dpipeline;
+							read_data = cache_cw_read && load_dpipeline && ~stall;
 						end
 	endcase
 end

@@ -174,7 +174,7 @@ register #(s_line) held_rdata (
 //cache combinational logic and muxes -- pipeline stage 2
 assign load_dirty0 = set_dirty0 | clear_dirty0;
 assign load_dirty1 = set_dirty1 | clear_dirty1;
-assign lru_in = (set_valid0 || set_valid1) ? set_valid0 : tag0_hit;
+assign lru_in = (set_valid0 || set_valid1 || set_dirty0 || set_dirty1) ? (set_valid0 | set_dirty0) : tag0_hit;
 assign tag0_hit = (tag_out[0] == pipe_cache_cw.address[31:8]) && valid_out0 && ~read_rdata;
 assign tag1_hit = (tag_out[1] == pipe_cache_cw.address[31:8]) && valid_out1 && ~read_rdata;
 assign hit = (tag1_hit) || (tag0_hit);
@@ -207,15 +207,28 @@ always_comb begin
 		default: datain[1] = pmem_rdata;
 	endcase
 
-// Just mem_byte_enable on load no read?
 	unique case (write_en0_sel)
-		write_en_mux::load_no_read : write_en_mux_out[0] = mem_byte_enable256;
+		write_en_mux::load_no_read : begin
+													if(set_valid0) begin
+														write_en_mux_out[0] = 32'hFFFFFFFF;
+													end
+													else begin
+														write_en_mux_out[0] = mem_byte_enable256;
+													end
+											  end
 		write_en_mux::load_and_read : write_en_mux_out[0] = 32'hFFFFFFFF;
 		default: write_en_mux_out[0] = 32'b0;
 	endcase
 
 	unique case (write_en1_sel) //change the enumerated type names to be more descriptive
-		write_en_mux::load_no_read : write_en_mux_out[1] = mem_byte_enable256;
+		write_en_mux::load_no_read : begin
+													if(set_valid1) begin
+														write_en_mux_out[1] = 32'hFFFFFFFF;
+													end
+													else begin
+														write_en_mux_out[1] = mem_byte_enable256;
+													end
+											  end
 		write_en_mux::load_and_read : write_en_mux_out[1] = 32'hFFFFFFFF;
 		default: write_en_mux_out[1] = 32'b0;
 	endcase

@@ -54,7 +54,8 @@ enum int unsigned {
 	hit_detection,
 	load,
 	store,
-	hold_rdata
+	write_data,
+	hold
 } state, next_state;
 
 always_ff @(posedge clk) begin
@@ -69,18 +70,23 @@ always_comb begin
 				else
 					next_state = idle;
 		hit_detection: if (~load_ipipeline && mem_resp)
-								next_state = hit_detection;
+								next_state = hold;
 							else
 								next_state = hit ? ((cache_cw_read || cache_cw_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
 		load: if(~pmem_resp)
 					next_state = load;
-				else
-					next_state = load_ipipeline ? ((cache_cw_read || cache_cw_write) ? hit_detection : idle) : hold_rdata;
+				else begin
+					if (pipe_cache_cw_write)
+						next_state = write_data;
+					else
+						next_state = load_ipipeline ? ((cache_cw_read || cache_cw_write)? hit_detection : idle) : hold;
+				end
 		store: 	if(~pmem_resp)
 						next_state = store;
 					else
 						next_state = load;
-		hold_rdata: next_state = load_ipipeline ? ((cache_cw_read || cache_cw_write) ? hit_detection : idle) : hold_rdata;
+		write_data: next_state = load_ipipeline ? ((cache_cw_read || cache_cw_write)? hit_detection : idle) : hold;
+		hold: next_state = load_ipipeline ? ((cache_cw_read || cache_cw_write) ? hit_detection : idle) : hold;
 		default: next_state = idle;
 	endcase
 end
@@ -90,7 +96,7 @@ always_comb begin
 	set_defaults();
 	unique case(state)
 		idle:	read_data = cache_cw_read | cache_cw_write;
-		hit_detection: if(hit || ~load_ipipeline) begin  //do nothing special in the  mem_read case
+		hit_detection: if(hit) begin  //do nothing special in the  mem_read case
 								load_lru = 1'b1;
 								mem_resp = 1'b1;
 								read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
@@ -103,16 +109,12 @@ always_comb begin
 							end
 							else begin
 								load_pipeline = 1'b0;
-								if(dirty_ctrl) begin
-									pmem_write = 1'b1;
-									clear_dirty0 = ~lru_out;
-									clear_dirty1 = lru_out;
-								end
-								else begin
+								if(~dirty_ctrl) begin
 									pmem_read = 1'b1;
 								end
 							end
 		load: begin
+					load_pipeline = 1'b0;
 					if(pmem_resp) begin
 						load_data[0] = ~lru_out;
 						load_data[1] = lru_out;
@@ -120,20 +122,16 @@ always_comb begin
 						load_tag[1] = lru_out;
 						set_valid0 = ~lru_out;
 						set_valid1 = lru_out;
-						load_lru = 1'b1;
-						mem_resp = 1'b1;
-						read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
-						set_rdata = 1'b1;
-						if(pipe_cache_cw_write) begin
-							load_data[0] = tag0_hit;
-							load_data[1] = tag1_hit;
-							set_dirty0 = tag0_hit;
-							set_dirty1 = tag1_hit;
+						if (~pipe_cache_cw_write) begin
+							mem_resp = 1'b1;
+							load_lru = 1'b1;
+							read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
+							set_rdata = 1'b1;
+							load_pipeline = 1'b1;
 						end
 					end
 					else begin
 						pmem_read = 1'b1;
-						load_pipeline = 1'b0;
 					end
 				end
 		store:	begin
@@ -147,11 +145,20 @@ always_comb begin
 							clear_dirty1 = lru_out;
 						end
 					end
-		hold_rdata:	begin
+		write_data: begin
 							mem_resp = 1'b1;
-							read_rdata = 1'b1;
+							load_data[0] = ~lru_out;
+							load_data[1] = lru_out;
+							set_dirty0 = ~lru_out;
+							set_dirty1 = lru_out;
+							load_lru = 1'b1;
 							read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
 						end
+		hold:	begin
+					mem_resp = 1'b1;
+					read_rdata = 1'b1;
+					read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
+				end
 	endcase
 end
 

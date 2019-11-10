@@ -16,12 +16,13 @@ module l2_cache #(
 	input logic mem_write,
 	input logic pmem_resp,
 	input [s_line-1:0] pmem_rdata,
-	output [s_line-1:0] mem_rdata,
+//	output [s_line-1:0] mem_rdata,
 	output logic [s_line-1:0] pmem_wdata,
 	output rv32i_word pmem_address,
 	output logic pmem_read,
 	output logic pmem_write,
-	output logic mem_resp
+	output l2_ret_t l2_ret
+//	output logic mem_resp
 );
 
 logic hit;
@@ -39,6 +40,12 @@ logic set_valid1;
 logic set_valid0;
 logic dirty_ctrl;
 logic lru_out;
+
+logic mem_resp;
+logic [s_line-1:0] mem_rdata;
+
+assign l2_ret.mem_resp = mem_resp;
+assign l2_ret.mem_rdata = mem_rdata;
 
 l2_cache_control control(.*);
 

@@ -69,7 +69,7 @@ always_comb begin
 		load: if(~pmem_resp)
 					next_state = load;
 				else
-					next_state = hit_detection;
+					next_state = idle;
 		store: if(~pmem_resp)
 					next_state = store;
 				 else
@@ -104,6 +104,8 @@ always_comb begin
 					load_tag[1] = lru_out;
 					set_valid0 = ~lru_out;
 					set_valid1 = lru_out;
+					load_lru = 1'b1;
+					mem_resp = 1'b1;
 				end
 				else begin
 					pmem_read = 1'b1;

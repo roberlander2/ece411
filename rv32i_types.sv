@@ -108,6 +108,11 @@ typedef struct packed {
 	rv32i_word mem_wdata;
 } cache_cw_t;
 
+typedef struct packed {
+	logic mem_resp;
+	logic [255:0] mem_rdata;
+} l2_ret_t;
+
 
 endpackage : rv32i_types
 

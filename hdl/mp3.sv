@@ -49,8 +49,20 @@ rv32i_word arb_l2_address;
 logic arb_l2_write;
 logic [255:0] arb_l2_rdata;
 logic arb_l2_resp;
+l2_ret_t arb_ret;
+l2_ret_t l2_ret;
+
+assign arb_l2_resp = arb_ret.mem_resp;
+assign arb_l2_rdata = arb_ret.mem_rdata;
 
 datapath dp(.*);
+
+l2_ret_reg l2_return(
+	.clk	(clk),
+   .load (1'b1),
+   .in	(l2_ret),
+   .out	(arb_ret)
+);
 
 // COMMENT TO REMOVE L2
 l2_cache #(5, 4) level_two(
@@ -62,14 +74,16 @@ l2_cache #(5, 4) level_two(
 	.pmem_resp				(pmem_resp),
 	.pmem_rdata				(pmem_rdata),
 	
-	.mem_rdata				(arb_l2_rdata),
+//	.mem_rdata				(arb_l2_rdata),
 	.pmem_wdata				(pmem_wdata),
 	.pmem_address			(pmem_address),
 	.pmem_read				(pmem_read),
 	.pmem_write				(pmem_write),
-	.mem_resp				(arb_l2_resp)
+	.l2_ret					(l2_ret)
+//	.mem_resp				(arb_l2_resp)
 );
 
+// COMMENT TO REMOVE L2
 arbiter arbiter(
 	.clk				(clk),
 	.iread			(ipmem_read),
@@ -91,7 +105,7 @@ arbiter arbiter(
 	.dresp			(dresp)
 );
 
-// UNCOMMENT TO REMOVE L2
+ //UNCOMMENT TO REMOVE L2
 //arbiter arbiter(
 //	.clk				(clk),
 //	.iread			(ipmem_read),

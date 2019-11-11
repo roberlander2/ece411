@@ -368,14 +368,15 @@ cw_register memwb_CW(
 //forwarding logic
 always_comb begin
 	unique case (forward_wb2mem)
-		1'b0: mem_wdata_forward = exmem_rs2_out;
+//		1'b0: mem_wdata_forward = exmem_rs2_out;
 		1'b1: mem_wdata_forward = regfilemux_out;
+		default: mem_wdata_forward = exmem_rs2_out;
 	endcase
 	unique case({forward_exmem_rs1, forward_memwb_rs1})
-		2'b00: begin
-					alu_in1 = alumux1_out;
-					cmp_in1 = idex_rs1_out;
-				 end
+//		2'b00: begin
+//					alu_in1 = alumux1_out;
+//					cmp_in1 = idex_rs1_out;
+//				 end
 		2'b01: begin
 					alu_in1 = regfilemux_out;
 					cmp_in1 = regfilemux_out;
@@ -388,13 +389,17 @@ always_comb begin
 					alu_in1 = memex_forward;
 					cmp_in1 = memex_forward;
 				 end
+		default: begin
+						alu_in1 = alumux1_out;
+						cmp_in1 = idex_rs1_out;
+					end
 	endcase
 	
 	unique case({forward_exmem_rs2, forward_memwb_rs2})
-		2'b00: begin
-					alu_in2 = alumux2_out;
-					cmp_in2 = cmpmux_out;
-				 end
+//		2'b00: begin
+//					alu_in2 = alumux2_out;
+//					cmp_in2 = cmpmux_out;
+//				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
 					cmp_in2 = regfilemux_out;
@@ -406,7 +411,11 @@ always_comb begin
 		2'b11: begin
 					alu_in2 = memex_forward;
 					cmp_in2 = memex_forward;
-				end
+				 end
+		default: begin
+						alu_in2 = alumux2_out;
+						cmp_in2 = cmpmux_out;
+					end
 	endcase
 	
 	unique case (exmem_cw.regfilemux_sel)
@@ -419,17 +428,20 @@ always_comb begin
 	 
 	unique case (forward_memwb_id_rs1)
 		1'b1: rs1_in = regfilemux_out;
-		1'b0: rs1_in = rs1_out;
+//		1'b0: rs1_in = rs1_out;
+		default: rs1_in = rs1_out;
 	endcase
 	 
 	unique case (forward_memwb_id_rs2)
 		1'b1: rs2_in = regfilemux_out;
-		1'b0: rs2_in = rs2_out;
+//		1'b0: rs2_in = rs2_out;
+		default: rs2_in = rs2_out;
 	endcase
 	 
 	unique case (stall)
-		1'b0: cw_mux_out = cw;
+//		1'b0: cw_mux_out = cw;
 		1'b1: cw_mux_out = 0;
+		default: cw_mux_out = cw;
 	endcase
 end
 
@@ -475,16 +487,16 @@ always_comb begin
 	 
 	 //write back
 	 unique case (memwb_cw.regfilemux_sel)
-	 regfilemux::alu_out: regfilemux_out = memwb_alu_out;
-	 regfilemux::br_en: regfilemux_out = memwb_cmp_out;
-	 regfilemux::u_imm: regfilemux_out = memwb_cw.u_imm;
-	 regfilemux::lw: regfilemux_out = mem_rdata;
-	 regfilemux::pc_plus4: regfilemux_out = memwb_pc_out + 4;
-	 regfilemux::lb: regfilemux_out = mdrreg_bytemask | {{24{mdrreg_bytemask[7]}}, 8'h00};
-    regfilemux::lbu: regfilemux_out = mdrreg_bytemask;
-    regfilemux::lh: regfilemux_out = mdrreg_halfmask | {{16{mdrreg_halfmask[15]}}, 16'h0000};
-    regfilemux::lhu: regfilemux_out = mdrreg_halfmask;
-	 default: `BAD_MUX_SEL;
+		 regfilemux::alu_out: regfilemux_out = memwb_alu_out;
+		 regfilemux::br_en: regfilemux_out = memwb_cmp_out;
+		 regfilemux::u_imm: regfilemux_out = memwb_cw.u_imm;
+		 regfilemux::lw: regfilemux_out = mem_rdata;
+		 regfilemux::pc_plus4: regfilemux_out = memwb_pc_out + 4;
+		 regfilemux::lb: regfilemux_out = mdrreg_bytemask | {{24{mdrreg_bytemask[7]}}, 8'h00};
+		 regfilemux::lbu: regfilemux_out = mdrreg_bytemask;
+		 regfilemux::lh: regfilemux_out = mdrreg_halfmask | {{16{mdrreg_halfmask[15]}}, 16'h0000};
+		 regfilemux::lhu: regfilemux_out = mdrreg_halfmask;
+		 default: `BAD_MUX_SEL;
 	 endcase
 end
 

@@ -113,6 +113,12 @@ typedef struct packed {
 	logic [255:0] mem_rdata;
 } l2_ret_t;
 
+typedef struct packed {
+	logic mem_read;
+	logic mem_write;
+	rv32i_word mem_address;
+	logic [255:0] mem_wdata;
+} l2_go_t;
 
 endpackage : rv32i_types
 

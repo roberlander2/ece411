@@ -8,8 +8,8 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
 // tb_itf ditf();
-int timeout = 100000000;   // Feel Free to adjust the timeout value
-int good_count = 0;
+int timeout = 1000000;   // Feel Free to adjust the timeout value
+// int good_count = 0;
 
 initial begin
     itf.halt = 1'b0;
@@ -25,10 +25,8 @@ always @(posedge itf.clk) begin
     // CP1 halt address = 168
     // CP2 halt address = 154
     // CP3 forwarding test halt address = 11c //this chacnges depending on number of no-ops in between instructions
-    if (dut.dp.load_pc && (dut.dp.pc_out == 32'h0000011c)) begin
-        good_count <= good_count + 1;
-        if (good_count == 1)
-            itf.halt <= 1'b1;
+    if (dut.dp.load_pc && (dut.dp.memwb_pc_out == dut.dp.ifid_pc_out) && dut.dp.idex_cw.flush && dut.dp.exmem_cw.flush) begin
+        itf.halt <= 1'b1;
     end
     if (itf.halt)
         $finish;

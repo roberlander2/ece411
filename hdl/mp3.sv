@@ -49,13 +49,27 @@ rv32i_word arb_l2_address;
 logic arb_l2_write;
 logic [255:0] arb_l2_rdata;
 logic arb_l2_resp;
+
 l2_ret_t arb_ret;
 l2_ret_t l2_ret;
+//l2_go_t arb_go;
+//l2_go_t l2_go;
 
-assign arb_l2_resp = arb_ret.mem_resp;
+//assign arb_go.mem_read = arb_l2_read;
+//assign arb_go.mem_wdata = arb_l2_wdata;
+//assign arb_go.mem_address = arb_l2_address;
+//assign arb_go.mem_write = arb_l2_write;
 assign arb_l2_rdata = arb_ret.mem_rdata;
+assign arb_l2_resp = arb_ret.mem_resp;
 
 datapath dp(.*);
+
+//l2_go_reg l2_going(
+//	.clk	(clk),
+//   .load ((arb_l2_read != l2_go.mem_read)|| (arb_l2_write != l2_go.mem_write)),
+//   .in	(arb_go),
+//   .out	(l2_go)
+//);
 
 l2_ret_reg l2_return(
 	.clk	(clk),
@@ -73,6 +87,7 @@ l2_cache #(5, 4) level_two(
 	.mem_write				(arb_l2_write),
 	.pmem_resp				(pmem_resp),
 	.pmem_rdata				(pmem_rdata),
+//	.l2_go					(l2_go),
 	
 //	.mem_rdata				(arb_l2_rdata),
 	.pmem_wdata				(pmem_wdata),

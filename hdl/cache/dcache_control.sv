@@ -70,7 +70,7 @@ always_comb begin
 				else
 					next_state = idle;
 		hit_detection: if (~load_ipipeline && mem_resp)
-								next_state = hold;
+								next_state = hit_detection;
 							else
 								next_state = hit ? ((cache_cw_read || cache_cw_write) ? hit_detection : idle) : (dirty_ctrl ? store : load);
 		load: if(~pmem_resp)

@@ -109,7 +109,7 @@ array #(s_index ,s_tag) tag[1:0] (
 array valid1 (
 	.clk(clk),
 	.load(set_valid1),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(valid_in),
@@ -119,7 +119,7 @@ array valid1 (
 array valid0 (
 	.clk(clk),
 	.load(set_valid0),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(valid_in),

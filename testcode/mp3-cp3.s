@@ -7,11 +7,11 @@ _start:
 # From the MP3 doc:
 # 	By checkpoint 3, your pipeline should be able to do hazard detection and forwarding.
 # 	Note that you should not stall or forward for dependencies on register x0 or when an
-# 	instruction does not use one of the source registers (such as rs2 for immediate instructions).
+# 	instruction does not use one of the source registers (such as rs2 for immediate instructions). 
 # 	Furthermore, your L2 cache should be completed and integrated into your cache hierarchy.
 
 # Mispredict taken branch flushing tests
-	#addi x8, x0, %lo(DataSeg) #add x8, x0, x0 #
+	#addi x8, x0, %lo(DataSeg) #add x8, x0, x0 # 
 taken_branches:
 	beq x0, x0, forward_br
 	lw x7, BAD
@@ -27,7 +27,7 @@ forward_br:
 # Mispredict not-taken branch flushing tests
 not_taken_branches:
 	add x1, x0, 1	# Also, test branching on forwarded value :)
-	beq x0, x1, oof	# Don't take (the condition fails)
+	beq x0, x1, oof	# Don't take
 
 	beq x0, x0, backward_br_nt # Take
 
@@ -47,14 +47,14 @@ forwarding_tests:
 
 	bne x3, x4, oof	# Also, test branching on 2 forwarded values :)
 
-	# MEM -> EX forwarding with stall -- requires stalling logic
+	# MEM -> EX forwarding with stall
 	lw x1, NOPE
 	lw x1, A
 	add x5, x1, x0		# Necissary forwarding stall
 
 	bne x5, x1, oof
 
-	# WB -> MEM forwarding test -- add this path regfilemux -> mem_address and regfilemux_out -> mem_wdata
+	# WB -> MEM forwarding test
 	add x3, x1, 1 #2
 	la x8, TEST
 	sw  x3, 0(x8)
@@ -63,13 +63,13 @@ forwarding_tests:
 	bne x4, x3, oof
 
 
-	# Half word forwarding test -- should not require stalling logic
+	# Half word forwarding test
 	lh  x2, FULL
 	add x3, x0, -1
 
 	bne x3, x2, oof
 
-	# Cache miss control test -- requires stalling logic
+	# Cache miss control test
 	add x4, x0, 3
 	lw  x2, B		# Cache miss
 	add x3, x2, 1	# Try to forward from cache miss load
@@ -90,7 +90,7 @@ halt:
 	lw x7, BAD
 
 oof:
-	lw x7, BAD1
+	lw x7, BAD
 	lw x2, PAY_RESPECTS
 	beq x0, x0, halt
 
@@ -111,7 +111,6 @@ DataSeg:
 	nop
 	nop
 BAD:    		.word 0x00BADBAD
-BAD1:    		.word 0x11BADBAD
 PAY_RESPECTS:	.word 0xFFFFFFFF
    # cache line boundary - this cache line should never be loaded
 

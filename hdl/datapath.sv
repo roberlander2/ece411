@@ -233,14 +233,14 @@ control CONTROL(
 //execute
 alu ALU(
 	.aluop(idex_cw.aluop),
-	.a(alu_in1),
-	.b(alu_in2),
+	.a(alumux1_out),
+	.b(alumux2_out),
 	.f(alu_out)
 );
 
 cmp CMP (
 	.a(cmp_in1), //idex_rs1_out
-	.b(cmp_in2), //cmpmux_out
+	.b(cmpmux_out), //cmpmux_out
 	.cmpop(idex_cw.cmpop),
 	.br_en(cmp_out)
 );
@@ -368,15 +368,15 @@ cw_register memwb_CW(
 //forwarding logic
 always_comb begin
 	unique case (forward_wb2mem)
-//		1'b0: mem_wdata_forward = exmem_rs2_out;
+		1'b0: mem_wdata_forward = exmem_rs2_out;
 		1'b1: mem_wdata_forward = regfilemux_out;
 		default: mem_wdata_forward = exmem_rs2_out;
 	endcase
 	unique case({forward_exmem_rs1, forward_memwb_rs1})
-//		2'b00: begin
-//					alu_in1 = alumux1_out;
-//					cmp_in1 = idex_rs1_out;
-//				 end
+		2'b00: begin
+					alu_in1 = idex_rs1_out;
+					cmp_in1 = idex_rs1_out;
+				 end
 		2'b01: begin
 					alu_in1 = regfilemux_out;
 					cmp_in1 = regfilemux_out;
@@ -390,16 +390,16 @@ always_comb begin
 					cmp_in1 = memex_forward;
 				 end
 		default: begin
-						alu_in1 = alumux1_out;
+						alu_in1 = idex_rs1_out;
 						cmp_in1 = idex_rs1_out;
 					end
 	endcase
 	
 	unique case({forward_exmem_rs2, forward_memwb_rs2})
-//		2'b00: begin
-//					alu_in2 = alumux2_out;
-//					cmp_in2 = cmpmux_out;
-//				 end
+		2'b00: begin
+					alu_in2 = idex_rs2_out;
+					cmp_in2 = idex_rs2_out;
+				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
 					cmp_in2 = regfilemux_out;
@@ -413,8 +413,8 @@ always_comb begin
 					cmp_in2 = memex_forward;
 				 end
 		default: begin
-						alu_in2 = alumux2_out;
-						cmp_in2 = cmpmux_out;
+						alu_in2 = idex_rs2_out;
+						cmp_in2 = idex_rs2_out;
 					end
 	endcase
 	
@@ -428,18 +428,18 @@ always_comb begin
 	 
 	unique case (forward_memwb_id_rs1)
 		1'b1: rs1_in = regfilemux_out;
-//		1'b0: rs1_in = rs1_out;
+		1'b0: rs1_in = rs1_out;
 		default: rs1_in = rs1_out;
 	endcase
 	 
 	unique case (forward_memwb_id_rs2)
 		1'b1: rs2_in = regfilemux_out;
-//		1'b0: rs2_in = rs2_out;
+		1'b0: rs2_in = rs2_out;
 		default: rs2_in = rs2_out;
 	endcase
 	 
 	unique case (stall)
-//		1'b0: cw_mux_out = cw;
+		1'b0: cw_mux_out = cw;
 		1'b1: cw_mux_out = 0;
 		default: cw_mux_out = cw;
 	endcase
@@ -457,7 +457,7 @@ always_comb begin
 	 	 
 	 //execute
 	 unique case (idex_cw.alumux1_sel)
-		 alumux::rs1_out: alumux1_out = idex_rs1_out;
+		 alumux::rs1_out: alumux1_out = alu_in1;
 		 alumux::pc_out: alumux1_out = idex_pc_out;
 		 default: `BAD_MUX_SEL;
 	 endcase
@@ -468,12 +468,12 @@ always_comb begin
 		 alumux::b_imm: alumux2_out = idex_cw.b_imm;
 		 alumux::s_imm: alumux2_out = idex_cw.s_imm;
 		 alumux::j_imm: alumux2_out = idex_cw.j_imm;
-		 alumux::rs2_out: alumux2_out = idex_rs2_out;
+		 alumux::rs2_out: alumux2_out = alu_in2;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 
 	 unique case (idex_cw.cmpmux_sel)
-		 cmpmux::rs2_out: cmpmux_out = idex_rs2_out;
+		 cmpmux::rs2_out: cmpmux_out = cmp_in2;
 		 cmpmux::i_imm: cmpmux_out = idex_cw.i_imm;
 		 default: `BAD_MUX_SEL;
 	 endcase

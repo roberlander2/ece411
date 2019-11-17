@@ -44,7 +44,7 @@ begin : state_actions
 	 iresp = 1'b0;
 	 dresp = 1'b0;
 	 unique case (state)
-		idle:	cache_sel = dservice;
+		idle:	cache_sel = dservice && ~iread;
 		service_icache:	begin
 									cache_sel = 1'b0;
 									iresp = pmem_resp;

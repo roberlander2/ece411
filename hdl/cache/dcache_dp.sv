@@ -21,6 +21,7 @@ module dcache_dp #(
 	 input rv32i_word mem_wdata,
 	 input logic [3:0] mem_byte_enable,
 	 input load_lru,
+	 input load_pipe_lru,
 	 input [1:0] load_data,
 	 input [1:0] load_tag,
 	 input set_dirty1,
@@ -43,6 +44,7 @@ module dcache_dp #(
 	 output logic hit,
 	 output logic dirty_ctrl,
 	 output logic lru_out,
+	 output logic pipe_lru_out,
 	 output logic tag1_hit,
 	 output logic tag0_hit,
 	 output cache_cw_t pipe_cache_cw,
@@ -150,7 +152,7 @@ array LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.rindex(pipe_cache_cw.address[7:5]),
+	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
@@ -169,6 +171,13 @@ register #(s_line) held_rdata (
     .load(set_rdata),
     .in(pmem_rdata),
     .out(latched_rdata)
+);
+
+register #(1) PIPE_LRU(
+    .clk(clk),
+    .load(load_pipe_lru),
+    .in(lru_out),
+    .out(pipe_lru_out)
 );
 
 //cache combinational logic and muxes -- pipeline stage 2

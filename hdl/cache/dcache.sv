@@ -29,6 +29,7 @@ module dcache #(
 logic tag1_hit;
 logic tag0_hit;
 logic lru_out;
+logic pipe_lru_out;
 logic hit;
 logic dirty_ctrl;
 logic read_data;
@@ -41,6 +42,7 @@ logic clear_dirty0;
 logic [1:0] load_data;
 logic [1:0] load_tag;
 logic load_lru;
+logic load_pipe_lru;
 logic set_rdata;
 logic read_rdata;
 logic mem_resp;

@@ -212,7 +212,7 @@ pc PC(
 //decode
 regfile REGFILE(
 	.clk(clk),
-	.load(memwb_cw.load_regfile),
+	.load(memwb_cw.load_regfile && (~memwb_cw.mem_read || load_pipeline)),
 	.in(regfilemux_out),
 	.src_a(cw.src1),
 	.src_b(cw.src2),

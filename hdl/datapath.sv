@@ -67,9 +67,11 @@ rv32i_word pc_out;
 //pipeline signals
 rv32i_word ifid_pc_out;
 logic ifid_pred;
+logic [9:0] ifid_ghr_out;
 
 rv32i_word idex_pc_out;
 logic idex_pred;
+logic [9:0] idex_ghr_out;
 rv32i_word idex_rs1_out;
 rv32i_word idex_rs2_out;
 control_word_t idex_cw;
@@ -307,6 +309,13 @@ register #(1) ifid_prediction(
 	 .out(ifid_pred)
 );
 
+register #(10) ifid_ghr(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ghr_out),
+	 .out(ifid_ghr_out)
+);
+
 //ID/EX
 register idex_PC(
     .clk  (clk),
@@ -322,6 +331,12 @@ register #(1) idex_prediction(
 	 .out(idex_pred)
 );
 
+register #(10) idex_ghr(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ifid_ghr_out),
+	 .out(idex_ghr_out)
+);
 
 register idex_RS1(
     .clk  (clk),

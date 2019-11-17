@@ -13,7 +13,7 @@ begin
     if (load)
     begin
 		  
-        data = {data << 1, in}; //latest branch takes the LSB
+        data = {data[size-2:0], in}; //latest branch takes the LSB
     end
 end
 

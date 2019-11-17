@@ -31,6 +31,7 @@ logic load_ghr;
 logic read_gst;
 logic update_gst;
 logic [ghr_size-1:0] ghr_out;
+logic resolution;
 
 //mux outputs
 rv32i_word pcmux_out;
@@ -57,7 +58,6 @@ logic br_en;
 logic br_en_flush;
 logic flush;
 logic branch_taken;
-logic gst_read;
 logic prediction;
 logic [ghr_size-1:0] gshare_idx;
 rv32i_word rs1_out;
@@ -66,8 +66,10 @@ rv32i_word pc_out;
 
 //pipeline signals
 rv32i_word ifid_pc_out;
+logic ifid_pred;
 
 rv32i_word idex_pc_out;
+logic idex_pred;
 rv32i_word idex_rs1_out;
 rv32i_word idex_rs2_out;
 control_word_t idex_cw;
@@ -112,14 +114,13 @@ assign flush = br_en || br_en_flush || is_jalr || is_jal || is_jalr_mem || is_ja
 assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
 assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
 assign is_br = (idex_cw.opcode == op_br) && ~idex_cw.flush;
-assign load_ghr = is_br || is_jal || is_jalr;
+assign load_ghr = is_br;
 assign is_jalr_mem = (exmem_cw.opcode == op_jalr) && ~exmem_cw.flush;
 assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
-assign branch_taken = is_jalr || is_jal || br_en;
-assign gst_read = cw.opcode == op_br || cw.opcode == op_jal || cw.opcode == op_jalr;
-assign gshare_idx = ghr_out ^ ifid_pc_out[ghr_size-1:0];
+assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
+assign resolution = idex_pred == (br_en && alu_out == ifid_pc_out);
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -219,10 +220,10 @@ forward stallRS2 (
 );
 
 //datapath modules
-gh_register #(10)(
+gh_register  #(10) ghr(
 	.clk(clk),
 	.load(load_ghr),
-	.in(branch_taken),
+	.in(br_en),
 	.out(ghr_out)
 );
 
@@ -232,11 +233,11 @@ gh_register #(10)(
 */
 gshare_table gshare_table(
 	 .clk(clk),
-    .read(gst_read),
-    .load(load_ghr),
+    .read(load_pipeline),
+    .load(load_pipeline),
     .rindex(gshare_idx),
-    .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1:0]),
-    .resolution(branch_taken == idex_prediction),
+    .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1 + 2:2]),
+    .resolution(resolution),
     .prediction(prediction)
 );
 //fetch
@@ -299,6 +300,13 @@ register ifid_PC(
     .out  (ifid_pc_out)
 );
 
+register #(1) ifid_prediction(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(pc_out),
+	 .out(ifid_pred)
+);
+
 //ID/EX
 register idex_PC(
     .clk  (clk),
@@ -306,6 +314,14 @@ register idex_PC(
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
 );
+
+register #(1) idex_prediction(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ifid_pred),
+	 .out(idex_pred)
+);
+
 
 register idex_RS1(
     .clk  (clk),

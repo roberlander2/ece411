@@ -17,14 +17,20 @@ module datapath
 	output logic [3:0] mem_byte_enable,
 	output logic stall
 );
-
+localparam ghr_size = 10;
 //loads
 logic load_pc;
 
+logic is_br;
 logic is_jalr;
 logic is_jal;
 logic is_jalr_mem;
 logic is_jal_mem;
+
+logic load_ghr;
+logic read_gst;
+logic update_gst;
+logic [ghr_size-1:0] ghr_out;
 
 //mux outputs
 rv32i_word pcmux_out;
@@ -50,6 +56,10 @@ logic cmp_out;
 logic br_en;
 logic br_en_flush;
 logic flush;
+logic branch_taken;
+logic gst_read;
+logic prediction;
+logic [ghr_size-1:0] gshare_idx;
 rv32i_word rs1_out;
 rv32i_word rs2_out;
 rv32i_word pc_out;
@@ -101,10 +111,15 @@ assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.
 assign flush = br_en || br_en_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem;
 assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
 assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
+assign is_br = (idex_cw.opcode == op_br) && ~idex_cw.flush;
+assign load_ghr = is_br || is_jal || is_jalr;
 assign is_jalr_mem = (exmem_cw.opcode == op_jalr) && ~exmem_cw.flush;
 assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
+assign branch_taken = is_jalr || is_jal || br_en;
+assign gst_read = cw.opcode == op_br || cw.opcode == op_jal || cw.opcode == op_jalr;
+assign gshare_idx = ghr_out ^ ifid_pc_out[ghr_size-1:0];
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -204,6 +219,26 @@ forward stallRS2 (
 );
 
 //datapath modules
+gh_register #(10)(
+	.clk(clk),
+	.load(load_ghr),
+	.in(branch_taken),
+	.out(ghr_out)
+);
+
+/*
+* TODO: create pipeline registers  for
+* ghr_out, prediction
+*/
+gshare_table gshare_table(
+	 .clk(clk),
+    .read(gst_read),
+    .load(load_ghr),
+    .rindex(gshare_idx),
+    .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1:0]),
+    .resolution(branch_taken == idex_prediction),
+    .prediction(prediction)
+);
 //fetch
 pc PC(
 	.clk(clk),

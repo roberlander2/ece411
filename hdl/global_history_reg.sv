@@ -1,12 +1,12 @@
-module gh_register
+module gh_register #(parameter size = 10)
 (
     input clk,
     input load,
     input logic in,
-    output logic [7:0] out
+    output logic [size-1:0] out
 );
 
-logic [7:0] data = 8'b0;
+logic [size-1:0] data = 0;
 
 always_ff @(posedge clk)
 begin

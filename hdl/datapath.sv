@@ -305,7 +305,7 @@ register ifid_PC(
 register #(1) ifid_prediction(
 	 .clk(clk),
 	 .load(load_pipeline && ~stall),
-	 .in(pc_out),
+	 .in(prediction),
 	 .out(ifid_pred)
 );
 

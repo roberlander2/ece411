@@ -20,19 +20,24 @@ input resolution; //from the execute stage, gave a correct prediction==1, else =
 output logic prediction; //to the decode stage
 
 logic [1:0] data [num_sets-1:0] = '{default: '0};
-logic _final_prediction;
-logic _prediction;
+logic rw_simul;
+assign rw_simul = load && (rindex == windex);
 logic [1:0] _update;
-assign prediction = _final_prediction;
+//assign prediction = _final_prediction;
 
 always_comb begin
 	
-	unique case(read)
-		1'b0: _prediction = 0;
-		1'b1: unique case(data[rindex][1])
-					1'b0: _prediction = 0;
-					1'b1: _prediction = 1;
+	unique case(rw_simul)
+		1'b0: unique case(read)
+					1'b0: prediction = 0;
+					1'b1: unique case(data[rindex])
+								2'b00: prediction = 0;
+								2'b01: prediction = 0;
+								2'b10: prediction = 1;
+								2'b11: prediction = 1;
+							endcase
 				endcase
+		1'b1: prediction = resolution;
 	endcase
 	
 	unique case(load)
@@ -56,9 +61,6 @@ end
 
 always_ff @(posedge clk)
 begin
-    if (read)
-        _final_prediction <= (load  & (rindex == windex)) ? resolution : _prediction;
-
     if(load) // based on the resolution, update the counter in the table
         data[windex] <= _update;
 end

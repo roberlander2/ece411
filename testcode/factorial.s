@@ -39,5 +39,5 @@ halt:                 # Infinite loop to keep the processor
 
 .section .rodata
 
-factorial:  .word 0xA
+factorial:  .word 0xC
 result:     .word 0x0

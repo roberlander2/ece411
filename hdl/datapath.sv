@@ -122,7 +122,7 @@ assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
-assign resolution = idex_pred == (br_en && alu_out == ifid_pc_out);
+assign resolution = idex_pred && (br_en && (alu_out == ifid_pc_out));
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -239,6 +239,7 @@ gshare_table gshare_table(
     .load(load_pipeline),
     .rindex(gshare_idx),
     .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1 + 2:2]),
+	 .wtaken(idex_pred),
     .resolution(resolution),
     .prediction(prediction)
 );

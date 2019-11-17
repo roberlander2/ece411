@@ -243,19 +243,16 @@ always_comb begin
 	endcase
 
 	unique case(lru_out)
-		dirty_mux::dirty0: begin
-										dirty_ctrl = dirty_out0;
-										pmem_wdata = data_out[0];
-								 end
+		dirty_mux::dirty0: dirty_ctrl = dirty_out0;
+		dirty_mux::dirty1: dirty_ctrl = dirty_out1;
+		default: 			 dirty_ctrl = dirty_out0;
+	endcase
+	
+	unique case(pipe_lru_out)
+		dirty_mux::dirty0: pmem_wdata = data_out[0];
 
-		dirty_mux::dirty1: begin
-										dirty_ctrl = dirty_out1;
-										pmem_wdata = data_out[1];
-								 end
-		default: 			 begin
-										dirty_ctrl = dirty_out0;
-										pmem_wdata = data_out[0];
-								 end
+		dirty_mux::dirty1: pmem_wdata = data_out[1];
+		default: 			 pmem_wdata = data_out[0];
 	endcase
 
 	unique case({clear_dirty1, clear_dirty0})

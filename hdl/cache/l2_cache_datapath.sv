@@ -113,7 +113,7 @@ array #(s_index, 1) dirty1 (
 	.read(read_high),
 	.rindex(index),
 	.windex(index),
-	.datain(load_dirty1),
+	.datain(set_dirty1),
 	.dataout(dirty_out1)
 );
 
@@ -123,7 +123,7 @@ array #(s_index, 1) dirty0 (
 	.read(read_high),
 	.rindex(index),
 	.windex(index),
-	.datain(load_dirty0),
+	.datain(set_dirty0),
 	.dataout(dirty_out0)
 );
 

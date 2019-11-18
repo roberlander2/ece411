@@ -1,4 +1,4 @@
-module gshare_table #(parameter index = 10)
+module predict_table #(parameter index = 10)
 (
     clk,
     read,
@@ -80,5 +80,5 @@ begin
     if(load) // based on the resolution, update the counter in the table
         data[windex] <= _update;
 end
-endmodule : gshare_table
+endmodule : predict_table
 

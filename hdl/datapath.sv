@@ -125,7 +125,7 @@ assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
-assign resolution = idex_pred && (br_en && (alu_out == ifid_pc_out));
+assign resolution = (idex_pred == br_en) && (pcmux_out == ifid_pc_out) || (~br_en == ~idex_pred);
 assign prediction = table_prediction && btb_hit;
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
@@ -234,14 +234,14 @@ gh_register  #(10) ghr(
 );
 /*
 * TODO: create pipeline registers  for
-* ghr_out, prediction
+* ghr_out, prediction, current;y just a local history pred table
 */
-gshare_table gshare_table(
+predict_table local_hist_table(
 	 .clk(clk),
     .read(load_pipeline),
-    .load(load_pipeline),
-    .rindex(gshare_idx),
-    .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1 + 2:2]),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(pc_out[ghr_size-1 + 2:2]),
+    .windex(idex_pc_out[ghr_size-1 + 2:2]),
 	 .wtaken(idex_pred),
     .resolution(resolution),
     .prediction(table_prediction)

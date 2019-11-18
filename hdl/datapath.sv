@@ -59,7 +59,10 @@ logic br_en_flush;
 logic flush;
 logic branch_taken;
 logic prediction;
+logic btb_hit;
+logic table_prediction;
 logic [ghr_size-1:0] gshare_idx;
+rv32i_word target;
 rv32i_word rs1_out;
 rv32i_word rs2_out;
 rv32i_word pc_out;
@@ -123,6 +126,7 @@ assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
 assign resolution = idex_pred && (br_en && (alu_out == ifid_pc_out));
+assign prediction = table_prediction && btb_hit;
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -221,14 +225,13 @@ forward stallRS2 (
 	.fwd(stall_rs2)
 );
 
-//datapath modules
+//Branch Predictor Datapath
 gh_register  #(10) ghr(
 	.clk(clk),
 	.load(load_ghr),
 	.in(br_en),
 	.out(ghr_out)
 );
-
 /*
 * TODO: create pipeline registers  for
 * ghr_out, prediction
@@ -241,8 +244,21 @@ gshare_table gshare_table(
     .windex(idex_ghr_out ^ idex_pc_out[ghr_size-1 + 2:2]),
 	 .wtaken(idex_pred),
     .resolution(resolution),
-    .prediction(prediction)
+    .prediction(table_prediction)
 );
+
+BTB btb(
+	.clk(clk), 
+	.rPC(pc_out),
+	.wPC(idex_pc_out),
+	.load(is_br && load_pipeline),
+	.read(load_pipeline && ~stall),
+	.wtarget(alu_out),
+	.rtarget(target),
+	.btb_hit(btb_hit)
+);
+
+//CPU datapath
 //fetch
 pc PC(
 	.clk(clk),

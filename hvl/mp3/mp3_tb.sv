@@ -28,6 +28,9 @@ always @(posedge itf.clk) begin
     if (dut.dp.load_pc && (dut.dp.memwb_pc_out == dut.dp.ifid_pc_out) && dut.dp.idex_cw.flush && dut.dp.exmem_cw.flush) begin
         itf.halt <= 1'b1;
     end
+    if (dut.dp.mem_wdata == 32'h0000947e) begin   //  && dut.dp.REGFILE.data[6] == 32'h000003a0
+        itf.halt <= 1'b1;
+    end
     if (itf.halt)
         $finish;
     if (timeout == 0) begin

@@ -38,27 +38,27 @@ assign rtarget = tar_out;
 //instantiate data arrays (for target data) 
 //and arrays for tag and valid data
 
-array #(idx_size, tag_size) tags(
+btb_array #(idx_size, tag_size) tags(
 	 .clk(clk),
     .read(read),
     .load(load),
     .rindex(ridx),
     .windex(widx),
     .datain(wtag),
-    .dataout(tar_out)
+    .dataout(tag_out)
 );
 
-array #(idx_size, 32) targets (
+btb_array #(idx_size, 32) targets (
 	 .clk(clk),
     .read(read),
     .load(load),
     .rindex(ridx),
     .windex(widx),
     .datain(wtarget),
-    .dataout(tag_out)
+    .dataout(tar_out)
 );
 
-array #(idx_size, 1) valid_tar (
+btb_array #(idx_size, 1) valid_tar (
 	 .clk(clk),
     .read(read),
     .load(load),

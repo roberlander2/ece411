@@ -48,8 +48,8 @@ always_comb begin
 					1'b0: unique case(wtaken)
 								1'b0: unique case(data[windex]) // wrong, not taken
 											2'b00: _update = 2'b01;
-											2'b01: _update = 2'b01;
-											2'b10: _update = 2'b10;
+											2'b01: _update = 2'b10;
+											2'b10: _update = 2'b11;
 											2'b11: _update = 2'b11;
 										endcase
 								1'b1: unique case(data[windex]) //wrong, taken
@@ -58,16 +58,18 @@ always_comb begin
 											2'b10: _update = 2'b01;
 											2'b11: _update = 2'b10;
 										endcase
-					1'b1: unique case(data[windex]) // correct, not taken
+								endcase
+					1'b1: unique case(wtaken)			
+								1'b0:	unique case(data[windex]) // correct, not taken
 											2'b00: _update = 2'b00;
 											2'b01: _update = 2'b00;
 											2'b10: _update = 2'b01;
 											2'b11: _update = 2'b10;
 										endcase
 								1'b1: unique case(data[windex]) //correct, taken
-											2'b00: _update = 2'b00;
-											2'b01: _update = 2'b01;
-											2'b10: _update = 2'b10;
+											2'b00: _update = 2'b01;
+											2'b01: _update = 2'b10;
+											2'b10: _update = 2'b11;
 											2'b11: _update = 2'b11;
 										endcase
 							endcase

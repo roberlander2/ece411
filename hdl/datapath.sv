@@ -240,8 +240,8 @@ predict_table local_hist_table(
 	 .clk(clk),
     .read(load_pipeline),
     .load(load_pipeline), //update predictor table  only in EXECUTE stage
-    .rindex(pc_out[ghr_size-1 + 2:2]),
-    .windex(idex_pc_out[ghr_size-1 + 2:2]),
+    .rindex(pc_out[9:0]),
+    .windex(idex_pc_out[9:0]),
 	 .wtaken(idex_pred),
     .resolution(resolution),
     .prediction(table_prediction)

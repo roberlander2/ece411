@@ -35,6 +35,7 @@ logic resolution;
 
 //mux outputs
 rv32i_word pcmux_out;
+rv32i_word pc_in;
 rv32i_word alumux1_out;
 rv32i_word alumux2_out;
 rv32i_word cmpmux_out;
@@ -54,6 +55,7 @@ control_word_t cw;
 control_word_t cw_mux_out;
 rv32i_word alu_out;
 logic cmp_out;
+logic mispredict; //flush due to a mispredict
 logic br_en;
 logic br_en_flush;
 logic flush;
@@ -84,6 +86,7 @@ rv32i_word exmem_alu_out;
 rv32i_word exmem_rs2_out;
 rv32i_word exmem_cmp_out;
 control_word_t exmem_cw;
+logic exmem_mispredict;
 
 rv32i_word memwb_pc_out;
 rv32i_word memwb_alu_out;
@@ -113,9 +116,10 @@ assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
 assign load_pc = load_pipeline;
+assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
 assign br_en = ((idex_cw.opcode == op_br) && cmp_out) && ~idex_cw.flush; //execute stage 
 assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
-assign flush = br_en || br_en_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem;
+assign flush = mispredict || (exmem_mispredict  && ~exmem_cw.flush)|| is_jalr || is_jal || is_jalr_mem || is_jal_mem; //need to change now
 assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
 assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
 assign is_br = (idex_cw.opcode == op_br) && ~idex_cw.flush;
@@ -263,7 +267,7 @@ BTB btb(
 pc PC(
 	.clk(clk),
 	.load(load_pc && ~stall),
-	.in(pcmux_out),
+	.in(pc_in),
 	.out(pc_out)
 );
 
@@ -377,6 +381,13 @@ cw_register idex_CW(
 );
 
 //EX/MEM
+register #(1) exmem_mispredict_flush(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(mispredict),
+	 .out(exmem_mispredict)
+);
+
 register exmem_PC(
     .clk  (clk),
     .load (load_pipeline),
@@ -531,13 +542,19 @@ end
 
 always_comb begin	 
 	 //fetch
-    unique case (pcmux_sel)	
+    unique case (pcmux_sel & mispredict)	
         pcmux::pc_plus4: pcmux_out = pc_out + 4;
 		  pcmux::alu_out: pcmux_out = alu_out;
 		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
         default: pcmux_out = pc_out + 4;
     endcase
-	 	 
+	 
+	 unique case(prediction)
+		1'b0:pc_in = pcmux_out;
+		1'b1:pc_in = target;
+		default: pc_in = pcmux_out;
+	 endcase
+	 
 	 //execute
 	 unique case (idex_cw.alumux1_sel)
 		 alumux::rs1_out: alumux1_out = alu_in1;

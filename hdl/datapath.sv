@@ -34,7 +34,8 @@ logic [ghr_size-1:0] ghr_out;
 logic resolution;
 
 //mux outputs
-rv32i_word pcmux_out;
+rv32i_word pcmux1_out;
+rv32i_word pcmux2_out;
 rv32i_word pc_in;
 rv32i_word alumux1_out;
 rv32i_word alumux2_out;
@@ -44,6 +45,8 @@ rv32i_word mem_addressmux_out;
 
 //mux selects
 pcmux::pcmux_sel_t pcmux_sel;
+bpredmux::bpredmux1_sel_t bpmux1_sel;
+bpredmux::bpredmux2_sel_t bpmux2_sel;
 
 //module outputs
 control_word_t cw;
@@ -57,7 +60,7 @@ logic flush;
 logic branch_taken;
 logic prediction;
 logic btb_hit;
-logic table_prediction;
+logic localtable_prediction;
 logic [ghr_size-1:0] gshare_idx;
 rv32i_word target;
 rv32i_word rs1_out;
@@ -113,7 +116,6 @@ assign inst_addr = pc_out;
 assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
 assign load_pc = load_pipeline;
-assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
 assign br_en = ((idex_cw.opcode == op_br) && cmp_out) && ~idex_cw.flush; //execute stage 
 assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
 assign flush = mispredict || (exmem_mispredict  && ~exmem_cw.flush)|| is_jalr || is_jal || is_jalr_mem || is_jal_mem; //need to change now
@@ -126,8 +128,12 @@ assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
-assign resolution = (idex_pred == br_en) && (pcmux_out == ifid_pc_out) || (~br_en == ~idex_pred);
-assign prediction = table_prediction && btb_hit;
+assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
+assign local_prediction = localtable_prediction && btb_hit;
+assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
+
+assign bpmux1_sel = bpredmux::bpredmux1_sel_t'({mispredict, idex_pred});
+assign bpmux2_sel = bpredmux::bpredmux2_sel_t'({is_jalr, is_jal});
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -245,8 +251,19 @@ predict_table local_hist_table(
     .windex(idex_pc_out[9:0]),
 	 .wtaken(idex_pred),
     .resolution(resolution),
-    .prediction(table_prediction)
+    .prediction(localtable_prediction)
 );
+
+//predict_table global_hist_table(
+//	 .clk(clk),
+//    .read(load_pipeline),
+//    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+//    .rindex(ghr_out),
+//    .windex(idex_ghr_out),
+//	 .wtaken(idex_pred),
+//    .resolution(resolution),
+//    .prediction(table_prediction)
+//);
 
 BTB btb(
 	.clk(clk), 
@@ -323,7 +340,7 @@ register ifid_PC(
 register #(1) ifid_prediction(
 	 .clk(clk),
 	 .load(load_pipeline && ~stall),
-	 .in(prediction),
+	 .in(local_prediction),
 	 .out(ifid_pred)
 );
 
@@ -550,18 +567,33 @@ end
 
 
 always_comb begin	 
-	 //fetch
-    unique case (pcmux_sel & mispredict)	
-        pcmux::pc_plus4: pcmux_out = pc_out + 4;
-		  pcmux::alu_out: pcmux_out = alu_out;
-		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
-        default: pcmux_out = pc_out + 4;
-    endcase
+//	 //fetch
+//    unique case (pcmux_sel & mispredict)	
+//        pcmux::pc_plus4: pcmux_out = idex_pc_out + 4;
+//		  pcmux::alu_out: pcmux_out = alu_out;
+//		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
+//        default: pcmux_out = pc_out + 4;
+//    endcase
+
+	 unique case(bpmux1_sel)
+		bpredmux::not_taken_correct: pcmux1_out = pc_out + 4;
+		bpredmux::taken_correct: pcmux1_out = pc_out + 4;
+		bpredmux::alu_out: pcmux1_out = alu_out;
+		bpredmux::taken_incorrect: pcmux1_out = idex_pc_out + 4;
+	 endcase
 	 
-	 unique case(prediction)
-		1'b0:pc_in = pcmux_out;
+	  unique case(bpmux2_sel)
+		bpredmux::bpmux1 : pcmux2_out = pcmux1_out;
+		bpredmux::jal: pcmux2_out = alu_out;
+		bpredmux::jalr: pcmux2_out = alu_out & 32'hFFFFFFFE;
+		default: pcmux2_out = pcmux1_out;
+	  endcase
+	 
+	 
+	 unique case(local_prediction)
+		1'b0:pc_in = pcmux2_out;
 		1'b1:pc_in = target;
-		default: pc_in = pcmux_out;
+		default: pc_in = pcmux2_out;
 	 endcase
 	 
 	 //execute

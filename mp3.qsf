@@ -75,7 +75,7 @@ set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pmem_random_cache_tb.sv 
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/random_dcache_tb.sv -section_id random_dcache_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id random_dcache_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hdl/cache/dcache.sv -section_id random_dcache_tb
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/gshare_predictor_table.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/predictor_table.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/global_history_reg.sv
 set_global_assignment -name SDC_FILE mp3.out.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_dp.sv

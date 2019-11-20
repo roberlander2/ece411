@@ -59,7 +59,7 @@ assign read_high = 1'b1;
 assign valid_in = 1'b1;
 assign load_dirty0 = set_dirty0 | clear_dirty0;
 assign load_dirty1 = set_dirty1 | clear_dirty1;
-assign lru_in = tag0_hit;
+assign lru_in = (set_valid0 || set_valid1 || set_dirty0 || set_dirty1) ? (set_valid0 | set_dirty0) : tag0_hit;
 assign tag1_hit = (tag_out[1] == mem_address[31:s_offset+s_index]) && valid_out1;
 assign tag0_hit = (tag_out[0] == mem_address[31:s_offset+s_index]) && valid_out0;
 assign hit = tag1_hit || tag0_hit;
@@ -90,7 +90,7 @@ array #(s_index, s_tag) tag[1:0] (
 array #(s_index, 1) valid1 (
 	.clk(clk),
 	.load(set_valid1),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(index),
 	.datain(valid_in),
@@ -100,7 +100,7 @@ array #(s_index, 1) valid1 (
 array #(s_index, 1) valid0 (
 	.clk(clk),
 	.load(set_valid0),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(index),
 	.datain(valid_in),
@@ -113,7 +113,7 @@ array #(s_index, 1) dirty1 (
 	.read(read_high),
 	.rindex(index),
 	.windex(index),
-	.datain(load_dirty1),
+	.datain(set_dirty1),
 	.dataout(dirty_out1)
 );
 
@@ -123,7 +123,7 @@ array #(s_index, 1) dirty0 (
 	.read(read_high),
 	.rindex(index),
 	.windex(index),
-	.datain(load_dirty0),
+	.datain(set_dirty0),
 	.dataout(dirty_out0)
 );
 

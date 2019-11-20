@@ -72,17 +72,19 @@ rv32i_word alu_in1;
 rv32i_word alu_in2;
 rv32i_word cmp_in1;
 rv32i_word cmp_in2;
+rv32i_word exmem_rs2_in;
 rv32i_word memex_forward;
 rv32i_word rs1_in;
 rv32i_word rs2_in;
 rv32i_word mem_wdata_forward;
 
+rv32i_word memwb_mem_address;
 logic [1:0] mem_addrmod4;
 logic [4:0] mem_addrmod4_mult;
 rv32i_word mdrreg_bytemask;
 rv32i_word mdrreg_halfmask;
 
-assign mem_addrmod4 = mem_address[1:0];
+assign mem_addrmod4 = memwb_mem_address[1:0];
 assign mem_addrmod4_mult = mem_addrmod4 << 3;
 assign mdrreg_bytemask = (mem_rdata & (32'h000000FF << mem_addrmod4_mult)) >> mem_addrmod4_mult;
 assign mdrreg_halfmask = (mem_rdata & (32'h0000FFFF << mem_addrmod4_mult)) >> mem_addrmod4_mult;
@@ -210,7 +212,7 @@ pc PC(
 //decode
 regfile REGFILE(
 	.clk(clk),
-	.load(memwb_cw.load_regfile),
+	.load(memwb_cw.load_regfile && (~memwb_cw.mem_read || load_pipeline)),
 	.in(regfilemux_out),
 	.src_a(cw.src1),
 	.src_b(cw.src2),
@@ -306,7 +308,7 @@ register exmem_ALU(
 register exmem_RS2(
     .clk  (clk),
     .load (load_pipeline),
-    .in   (idex_rs2_out),
+    .in   (exmem_rs2_in),
     .out  (exmem_rs2_out)
 );
 
@@ -353,6 +355,13 @@ register memwb_CMP(
     .out  (memwb_cmp_out)
 );
 
+register memwb_mem_addr(
+	 .clk  (clk),
+    .load (load_pipeline),
+    .in   (mem_address), //perform ZEXT here?
+    .out  (memwb_mem_address)
+);
+
 cw_register memwb_CW(
     .clk  (clk),
     .load (load_pipeline),
@@ -394,22 +403,27 @@ always_comb begin
 		2'b00: begin
 					alu_in2 = idex_rs2_out;
 					cmp_in2 = idex_rs2_out;
+					exmem_rs2_in = idex_rs2_out;
 				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
 					cmp_in2 = regfilemux_out;
+					exmem_rs2_in = regfilemux_out;
 				 end
 		2'b10: begin
 					alu_in2 = memex_forward;
 					cmp_in2 = memex_forward;
+					exmem_rs2_in = memex_forward;
 				 end
 		2'b11: begin
 					alu_in2 = memex_forward;
 					cmp_in2 = memex_forward;
+					exmem_rs2_in = memex_forward;
 				 end
 		default: begin
 						alu_in2 = idex_rs2_out;
 						cmp_in2 = idex_rs2_out;
+						exmem_rs2_in = idex_rs2_out;
 					end
 	endcase
 	

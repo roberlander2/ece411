@@ -89,7 +89,7 @@ array #(s_index ,s_tag) tag[1:0] (
 array valid1 (
 	.clk(clk),
 	.load(set_valid1),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(valid_in),
@@ -99,7 +99,7 @@ array valid1 (
 array valid0 (
 	.clk(clk),
 	.load(set_valid0),
-	.read(read_high),
+	.read(read_data),
 	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(valid_in),
@@ -110,7 +110,7 @@ array LRU (
 	.clk(clk),
 	.load(load_lru),
 	.read(read_high),
-	.rindex(pipe_cache_cw.address[7:5]),
+	.rindex(index),
 	.windex(pipe_cache_cw.address[7:5]),
 	.datain(lru_in),
 	.dataout(lru_out)
@@ -154,7 +154,7 @@ always_comb begin
 											default: mem_rdata256 = data_out[0];
 										 endcase
 		  bus_adapter_mux::pmem_rdata256: mem_rdata256 = read_rdata ? latched_rdata : pmem_rdata;
-        default: mem_rdata256 = read_rdata ? latched_rdata : pmem_rdata;
+        default: mem_rdata256 = 256'b0;
     endcase
 end
 

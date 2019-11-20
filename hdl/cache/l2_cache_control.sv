@@ -44,6 +44,7 @@ enum int unsigned {
 	idle,
 	hit_detection,
 	load,
+	plop,
 	store
 } state, next_state;
 
@@ -62,7 +63,7 @@ always_comb begin
 									next_state = idle;
 								else
 									unique case(dirty_ctrl)
-										1'b0: next_state = load;
+										1'b0: next_state = mem_read ? load : plop;
 										1'b1: next_state = store;
 									endcase
 							end 
@@ -70,10 +71,11 @@ always_comb begin
 					next_state = load;
 				else
 					next_state = idle;
+		plop: next_state = idle;
 		store: if(~pmem_resp)
 					next_state = store;
 				 else
-					next_state = load;
+					next_state = mem_read ? load : plop;
 	default: next_state = idle;
 	endcase
 end
@@ -92,10 +94,8 @@ always_comb begin
 									set_dirty1 = tag1_hit;
 								end
 							end
-							else begin
-								if(~dirty_ctrl) begin
-									pmem_read = 1'b1;
-								end
+							else if(~dirty_ctrl && mem_read) begin
+								pmem_read = 1'b1;
 							end
 		load: if(pmem_resp) begin
 					load_data[0] = ~lru_out;
@@ -109,6 +109,18 @@ always_comb begin
 				end
 				else begin
 					pmem_read = 1'b1;
+				end
+		plop: begin
+					load_lru = 1'b1;
+					mem_resp = 1'b1;
+					load_data[0] = ~lru_out;
+					load_data[1] = lru_out;
+					load_tag[0] = ~lru_out;
+					load_tag[1] = lru_out;
+					set_dirty0 = ~lru_out;
+					set_dirty1 = lru_out;
+					set_valid0 = ~lru_out;
+					set_valid1 = lru_out;
 				end
 		store: if(pmem_resp) begin
 					pmem_read = 1'b1;

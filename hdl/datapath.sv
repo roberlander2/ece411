@@ -138,8 +138,8 @@ assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
 assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
-assign local_prediction = localtable_prediction && btb_hit;
-assign global_prediction = globaltable_prediction && btb_hit;
+assign local_prediction = localtable_prediction && btb_hit; //&& ~br_en??
+assign global_prediction = globaltable_prediction && btb_hit; //&& ~br_en?
 //assign gshare_prediction = gsharetable_prediction && btb_hit;
 assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
 assign mispred_flush = ~exmem_reso && ~exmem_cw.flush;
@@ -277,14 +277,14 @@ predict_table global_hist_table(
     .prediction(globaltable_prediction)
 );
 
-selector selector(
-	.clk(clk),
-	.load(load_pipeline),
-	.read(load_pipeline),
-	.pred_used(idex_pred_sel),
-	.resolution(resolution),
-	.pred_sel(pred_sel)
-);
+//selector selector(
+//	.clk(clk),
+//	.load(load_pipeline),
+//	.read(load_pipeline),
+//	.pred_used(idex_pred_sel),
+//	.resolution(resolution),
+//	.pred_sel(pred_sel)
+//);
 
 //predict_table gshare_table(
 //	 .clk(clk),
@@ -372,16 +372,16 @@ register ifid_PC(
 register #(1) ifid_prediction(
 	 .clk(clk),
 	 .load(load_pipeline && ~stall),
-	 .in(prediction),
+	 .in(local_prediction),
 	 .out(ifid_pred)
 );
 
-register #(1) ifid_pred_used(
-	 .clk(clk),
-	 .load(load_pipeline && ~stall),
-	 .in(pred_sel),
-	 .out(ifid_pred_sel)
-);
+//register #(1) ifid_pred_used(
+//	 .clk(clk),
+//	 .load(load_pipeline && ~stall),
+//	 .in(pred_sel),
+//	 .out(ifid_pred_sel)
+//);
 
 register #(10) ifid_ghr(
 	 .clk(clk),
@@ -405,12 +405,12 @@ register #(1) idex_prediction(
 	 .out(idex_pred)
 );
 
-register #(1) idex_pred_used(
-	 .clk(clk),
-	 .load(load_pipeline && ~stall),
-	 .in(ifid_pred_sel),
-	 .out(idex_pred_sel)
-);
+//register #(1) idex_pred_used(
+//	 .clk(clk),
+//	 .load(load_pipeline && ~stall),
+//	 .in(ifid_pred_sel),
+//	 .out(idex_pred_sel)
+//);
 
 register #(10) idex_ghr(
 	 .clk(clk),
@@ -641,7 +641,7 @@ always_comb begin
 		default: prediction = local_prediction;
 	 endcase
 	 
-	 unique case(prediction)
+	 unique case(local_prediction)
 		1'b0:pc_in = pcmux2_out;
 		1'b1:pc_in = target;
 		default: pc_in = pcmux2_out;

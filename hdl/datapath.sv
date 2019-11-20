@@ -58,9 +58,13 @@ logic br_en;
 logic br_en_flush;
 logic flush;
 logic branch_taken;
-logic prediction;
+logic local_prediction;
+logic global_prediction;
+logic gshare_prediction;
 logic btb_hit;
 logic localtable_prediction;
+logic globaltable_prediction;
+logic gsharetable_prediction;
 logic [ghr_size-1:0] gshare_idx;
 rv32i_word target;
 rv32i_word rs1_out;
@@ -130,6 +134,8 @@ assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
 assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
 assign local_prediction = localtable_prediction && btb_hit;
+assign global_prediction = globaltable_prediction && btb_hit;
+assign gshare_prediction = gsharetable_prediction && btb_hit;
 assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
 
 assign bpmux1_sel = bpredmux::bpredmux1_sel_t'({mispredict, idex_pred});
@@ -254,16 +260,27 @@ predict_table local_hist_table(
     .prediction(localtable_prediction)
 );
 
-//predict_table global_hist_table(
-//	 .clk(clk),
-//    .read(load_pipeline),
-//    .load(load_pipeline), //update predictor table  only in EXECUTE stage
-//    .rindex(ghr_out),
-//    .windex(idex_ghr_out),
-//	 .wtaken(idex_pred),
-//    .resolution(resolution),
-//    .prediction(table_prediction)
-//);
+predict_table global_hist_table(
+	 .clk(clk),
+    .read(load_pipeline),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(ghr_out),
+    .windex(idex_ghr_out),
+	 .wtaken(idex_pred),
+    .resolution(resolution),
+    .prediction(globaltable_prediction)
+);
+
+predict_table gshare_table(
+	 .clk(clk),
+    .read(load_pipeline),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(ghr_out ^ pc_out[9:0]),
+    .windex(idex_ghr_out ^ idex_pc_out[9:0]),
+	 .wtaken(idex_pred),
+    .resolution(resolution),
+    .prediction(gsharetable_prediction)
+);
 
 BTB btb(
 	.clk(clk), 
@@ -340,7 +357,7 @@ register ifid_PC(
 register #(1) ifid_prediction(
 	 .clk(clk),
 	 .load(load_pipeline && ~stall),
-	 .in(local_prediction),
+	 .in(gshare_prediction),
 	 .out(ifid_pred)
 );
 
@@ -590,7 +607,7 @@ always_comb begin
 	  endcase
 	 
 	 
-	 unique case(local_prediction)
+	 unique case(gshare_prediction)
 		1'b0:pc_in = pcmux2_out;
 		1'b1:pc_in = target;
 		default: pc_in = pcmux2_out;

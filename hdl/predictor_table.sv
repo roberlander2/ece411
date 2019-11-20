@@ -21,7 +21,7 @@ input logic wtaken;
 input resolution; //from the execute stage, gave a correct prediction==1, else == 0
 output logic prediction; //to the decode stage
 
-logic [1:0] data [num_sets-1:0] = '{default: '0};
+logic [1:0] data [num_sets-1:0] = '{default: 2'b01};
 logic rw_simul;
 assign rw_simul = load && (rindex == windex);
 logic [1:0] _update;

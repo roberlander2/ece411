@@ -36,11 +36,6 @@ rv32i_word mem_addressmux_out;
 
 //mux selects
 pcmux::pcmux_sel_t pcmux_sel;
-alumux::alumux1_sel_t alumux1_sel;
-alumux::alumux2_sel_t alumux2_sel;
-cmpmux::cmpmux_sel_t cmpmux_sel;
-regfilemux::regfilemux_sel_t regfilemux_sel;
-marmux::marmux_sel_t marmux_sel;
 
 //module outputs
 control_word_t cw;

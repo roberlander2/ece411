@@ -7,7 +7,7 @@ timeprecision 1ns;
 bit clk;
 int timeout = 1000000;
 logic valid;
-logic [2:0] way_out;
+logic [3:0] way_out;
 logic load_lru;
 
 // Stop simulation on timeout (stall detection), halt
@@ -19,7 +19,7 @@ always @(posedge clk) begin
     timeout <= timeout - 1;
 end
 
-pseudo_lru #(8) dut(.*);
+pseudo_lru #(16) dut(.*);
 
 task pseudo_lru_tests(input int count);
     $display("Starting Pseudo LRU Tests");

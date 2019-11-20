@@ -9,6 +9,14 @@ module pseudo_lru #(
 	 output logic valid
 );
 
+//clk,
+//read,
+//load,
+//rindex,
+//windex,
+//datain,
+//dataout
+
 logic [s_assoc-2:0] new_lru;
 logic [s_assoc-2:0] lru_out;
 logic [s_width-1:0] indices [s_width-1:0];

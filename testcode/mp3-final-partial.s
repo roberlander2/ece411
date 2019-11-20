@@ -48,116 +48,120 @@ FILLM2:
     lw x3, Counter2
     andi x1, x1, 0
     andi x2, x2, 0
+    
+HALT:
+    beq x0, x0, HALT
 
-FILLM3:
-    jal x7,  CalAddress
-    add x6, x5, x4
-    sw  x3, 0(x6)
-    addi x3, x3, -5
-    jal x7,  CalNEXT3
-    addi x5, x1, 0
-    ble x0, x5, FILLM3
-
-    la x3, M00
-    lw x4, TWOFIVESIX
-    add x4, x3, x4
-    andi x6, x6, 0
-
-Continue1_2:
-
-    lw x1, X2
-    lw x2, Y2
-    jal x7,  CalAddress
-    add x7, x5, x4
-    lw x6, 0(x7)
-    jal x7,  CalNEXT3
-    sw x1, X2, x15
-    sw x2, Y2, x15
-
-    lw x1, XX1
-    lw x2, Y1
-    jal x7,  CalAddress
-    add x5, x5, x3
-    lw x7, 0(x5)
-    add x6, x6, x7
-    sw x6, 0(x5)
-
-    jal x7,  CalNEXT2
-    addi x7, x1, 0
-    bgt x0, x7, Done3
-    sw x1, XX1, x15
-    sw x2, Y1, x15
-
-    beq x0, x0, Continue1_2
-Done3:
-
-    andi x1, x1, 0
-    sw  x1, XX1, x15
-    sw x1, X2, x15
-    sw  x1, Y1, x15
-    sw  x1, Y2, x15
-
-    la x3,  M00
-    lw x4, TWOFIVESIX
-    add x4, x4, x4
-    add x4, x3, x4
-    andi x6, x6, 0
-# GOOD UP TO HERE
-Continue1_3:
-
-    lw x1, X2
-    lw x2, Y2
-    jal x7,  CalAddress
-    add x7, x5, x3
-    lw x6, 0(x7)
-    beq x0, x0, HALT # remove this later!!
-    jal x7,  CalNEXT1
-    sw x1, X2, x15
-    sw x2, Y2, x15
-
-    lw x1, XX1
-    lw x2, Y1
-    jal x7,  CalAddress
-    add x5, x5, x4
-    lw x7, 0(x5)
-    beq x0, x0, HALT # remove this later!!
-    add x6, x6, x7
-    sw x6, 0(x5)
-
-    jal x7,  CalNEXT3
-    addi x7, x1, 0
-    beq x0, x0, HALT    #bgt x0, x7, Done4
-    sw x1, XX1, x15
-    sw x2, Y1, x15
-
-    beq x0, x0, Continue1_3
-
-# FAILS SOMEWHERE IN Continue1_3 -> x6 incorrect (1f288 should be 237cc)
-# Done4:
 #
-#     beq x0, x0, CHECKSUM
-
-CalNEXT1:
-
-    addi x5, x1, -15
-    beq x0, x5, YTEST
-    addi x1, x1, 1
-    beq x0, x0, SKip
-
-YTEST:
-    addi x5, x2, -15
-    beq x0, x5, DoneFor
-    addi x2, x2, 1
-    andi x1, x1, 0
-    beq x0, x0, SKip
-
-DoneFor:
-    andi x1, x1, 0
-    addi x1, x1, -1
-
-SKip:
-    jalr x0, x7, 0
-
+# FILLM3:
+#     jal x7,  CalAddress
+#     add x6, x5, x4
+#     sw  x3, 0(x6)
+#     addi x3, x3, -5
+#     jal x7,  CalNEXT3
+#     addi x5, x1, 0
+#     ble x0, x5, FILLM3
+#
+#     la x3, M00
+#     lw x4, TWOFIVESIX
+#     add x4, x3, x4
+#     andi x6, x6, 0
+#
+# Continue1_2:
+#
+#     lw x1, X2
+#     lw x2, Y2
+#     jal x7,  CalAddress
+#     add x7, x5, x4
+#     lw x6, 0(x7)
+#     jal x7,  CalNEXT3
+#     sw x1, X2, x15
+#     sw x2, Y2, x15
+#
+#     lw x1, XX1
+#     lw x2, Y1
+#     jal x7,  CalAddress
+#     add x5, x5, x3
+#     lw x7, 0(x5)
+#     add x6, x6, x7
+#     sw x6, 0(x5)
+#
+#     jal x7,  CalNEXT2
+#     addi x7, x1, 0
+#     bgt x0, x7, Done3
+#     sw x1, XX1, x15
+#     sw x2, Y1, x15
+#
+#     beq x0, x0, Continue1_2
+# Done3:
+#
+#     andi x1, x1, 0
+#     sw  x1, XX1, x15
+#     sw x1, X2, x15
+#     sw  x1, Y1, x15
+#     sw  x1, Y2, x15
+#
+#     la x3,  M00
+#     lw x4, TWOFIVESIX
+#     add x4, x4, x4
+#     add x4, x3, x4
+#     andi x6, x6, 0
+# # GOOD UP TO HERE
+# Continue1_3:
+#
+#     lw x1, X2
+#     lw x2, Y2
+#     jal x7,  CalAddress
+#     add x7, x5, x3
+#     lw x6, 0(x7)
+#     beq x0, x0, HALT # remove this later!!
+#     jal x7,  CalNEXT1
+#     sw x1, X2, x15
+#     sw x2, Y2, x15
+#
+#     lw x1, XX1
+#     lw x2, Y1
+#     jal x7,  CalAddress
+#     add x5, x5, x4
+#     lw x7, 0(x5)
+#     beq x0, x0, HALT # remove this later!!
+#     add x6, x6, x7
+#     sw x6, 0(x5)
+#
+#     jal x7,  CalNEXT3
+#     addi x7, x1, 0
+#     beq x0, x0, HALT    #bgt x0, x7, Done4
+#     sw x1, XX1, x15
+#     sw x2, Y1, x15
+#
+#     beq x0, x0, Continue1_3
+#
+# # FAILS SOMEWHERE IN Continue1_3 -> x6 incorrect (1f288 should be 237cc)
+# # Done4:
+# #
+# #     beq x0, x0, CHECKSUM
+#
+# CalNEXT1:
+#
+#     addi x5, x1, -15
+#     beq x0, x5, YTEST
+#     addi x1, x1, 1
+#     beq x0, x0, SKip
+#
+# YTEST:
+#     addi x5, x2, -15
+#     beq x0, x5, DoneFor
+#     addi x2, x2, 1
+#     andi x1, x1, 0
+#     beq x0, x0, SKip
+#
+# DoneFor:
+#     andi x1, x1, 0
+#     addi x1, x1, -1
+#
+# SKip:
+#     jalr x0, x7, 0
+#
 CalNEXT2:
 
     addi x5, x2, -15
@@ -179,50 +183,50 @@ Done1:
 SKip1:
     jalr x0, x7, 0
 
-CalNEXT3:
-
-    sw x3, TEMP3, x15
-
-    addi x3, x1, -15
-    beq x0, x3, DRow
-    addi x3, x2, 0
-    beq x0, x3, DRow1
-    lw x3, NEGONEFIVE
-    addi x3, x1, -15
-    beq x0, x3, DRow
-
-    addi x1, x1, 1
-    addi x2, x2, -1
-    beq x0, x0, SKIP2
-
-DRow1:
-    addi x2, x1, 1
-    andi x1, x1, 0
-    beq x0, x0, SKIP2
-
-DRow:
-    addi x3, x2, -15
-    beq x0, x3, Done2
-
-    addi x1, x2, 1
-    andi x2, x2, 0
-    addi x2, x2, 15
-    beq x0, x0, SKIP2
-
-Done2:
-    andi x1, x1, 0
-    addi x1, x1, -1
-
-SKIP2:
-    lw x3, TEMP3
-    jalr x0, x7, 0
-
+# CalNEXT3:
+#
+#     sw x3, TEMP3, x15
+#
+#     addi x3, x1, -15
+#     beq x0, x3, DRow
+#     addi x3, x2, 0
+#     beq x0, x3, DRow1
+#     lw x3, NEGONEFIVE
+#     addi x3, x1, -15
+#     beq x0, x3, DRow
+#
+#     addi x1, x1, 1
+#     addi x2, x2, -1
+#     beq x0, x0, SKIP2
+#
+# DRow1:
+#     addi x2, x1, 1
+#     andi x1, x1, 0
+#     beq x0, x0, SKIP2
+#
+# DRow:
+#     addi x3, x2, -15
+#     beq x0, x3, Done2
+#
+#     addi x1, x2, 1
+#     andi x2, x2, 0
+#     addi x2, x2, 15
+#     beq x0, x0, SKIP2
+#
+# Done2:
+#     andi x1, x1, 0
+#     addi x1, x1, -1
+#
+# SKIP2:
+#     lw x3, TEMP3
+#     jalr x0, x7, 0
+#
 CalAddress:
     slli x5, x2, 5
     add x5, x1, x5
     slli x5, x5, 2
     jalr x0, x7, 0
-#
+
 # CHECKSUM:
 #
 #     la  x1, M00
@@ -277,8 +281,8 @@ CalAddress:
 
 
 
-HALT:
-    beq x0, x0, HALT
+# HALT:
+#     beq x0, x0, HALT
 
 
 .section .rodata

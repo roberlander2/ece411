@@ -8,6 +8,6 @@ module way_calc #(
 	output [s_width-1:0] way_out
 );
 
-assign way_out = ((leaf_index - s_leaf) << 1) + lru_out[leaf_index];
+assign way_out = ((leaf_index - s_leaf[s_width-1:0]) << 1) + lru_out[leaf_index];
 
 endmodule : way_calc

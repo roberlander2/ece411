@@ -6,6 +6,7 @@ module dcache_control(
 	input hit,
 	input dirty_ctrl,
 	input lru_out,
+	input pipe_lru_out,
 	input tag1_hit,
 	input tag0_hit,
 	input pipe_cache_cw_write,
@@ -24,6 +25,7 @@ module dcache_control(
 	output logic set_valid1,
 	output logic set_valid0,
 	output logic load_lru,
+	output logic load_pipe_lru,
 	output logic read_data,
 	output logic load_pipeline,
 	output logic set_rdata,
@@ -32,6 +34,7 @@ module dcache_control(
 
 function void set_defaults();
 	load_lru = 1'b0;
+	load_pipe_lru = 1'b0;
 	read_data = 1'b0;
 	load_data = 2'b0;
 	load_tag = 2'b0;
@@ -109,6 +112,7 @@ always_comb begin
 							end
 							else begin
 								load_pipeline = 1'b0;
+								load_pipe_lru = 1'b1;
 								if(~dirty_ctrl) begin
 									pmem_read = 1'b1;
 								end
@@ -116,12 +120,12 @@ always_comb begin
 		load: begin
 					load_pipeline = 1'b0;
 					if(pmem_resp) begin
-						load_data[0] = ~lru_out;
-						load_data[1] = lru_out;
-						load_tag[0] = ~lru_out;
-						load_tag[1] = lru_out;
-						set_valid0 = ~lru_out;
-						set_valid1 = lru_out;
+						load_data[0] = ~pipe_lru_out;
+						load_data[1] = pipe_lru_out;
+						load_tag[0] = ~pipe_lru_out;
+						load_tag[1] = pipe_lru_out;
+						set_valid0 = ~pipe_lru_out;
+						set_valid1 = pipe_lru_out;
 						if (~pipe_cache_cw_write) begin
 							mem_resp = 1'b1;
 							load_lru = 1'b1;
@@ -141,16 +145,16 @@ always_comb begin
 						end
 						else begin
 							pmem_write = 1'b1;
-							clear_dirty0 = ~lru_out;
-							clear_dirty1 = lru_out;
+							clear_dirty0 = ~pipe_lru_out;
+							clear_dirty1 = pipe_lru_out;
 						end
 					end
 		write_data: begin
 							mem_resp = 1'b1;
-							load_data[0] = ~lru_out;
-							load_data[1] = lru_out;
-							set_dirty0 = ~lru_out;
-							set_dirty1 = lru_out;
+							load_data[0] = ~pipe_lru_out;
+							load_data[1] = pipe_lru_out;
+							set_dirty0 = ~pipe_lru_out;
+							set_dirty1 = pipe_lru_out;
 							load_lru = 1'b1;
 							read_data = (cache_cw_read | cache_cw_write) && load_ipipeline;
 						end

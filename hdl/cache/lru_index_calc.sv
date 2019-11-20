@@ -8,7 +8,8 @@ module lru_index_calc #(
 	input [s_width-1:0] parent,
 	input [s_assoc-2:0] lru_out,
 	output logic [s_width-1:0] child,
-	output logic child_valid
+	output logic child_valid,
+	output logic reversed
 );
 
 always_ff @(posedge clk) begin

@@ -43,6 +43,7 @@ begin : state_actions
 		 idle: begin
 					 lru_valid = 1'b1;
 					 miss_valid = 1'b1;
+					 lru_valid = ~load_lru;
 				 end
 		 lru_hit: begin
 						 hit_valid = 1'b1;
@@ -60,6 +61,7 @@ begin : state_actions
 					  end
 		 recalc: begin
 						miss_valid = 1'b1;
+						lru_valid = way_valid;
 					end
 	endcase
 end

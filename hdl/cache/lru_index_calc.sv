@@ -4,7 +4,7 @@ module lru_index_calc #(
 )(
 	input clk,
 	input load,
-	input load_lru,
+	input invalidate,
 	input [s_width-1:0] parent,
 	input [s_assoc-2:0] lru_out,
 	output logic [s_width-1:0] child,
@@ -12,10 +12,7 @@ module lru_index_calc #(
 );
 
 always_ff @(posedge clk) begin
-	if (load_lru) begin
-		child_valid <= 1'b0;
-	end
-	else if (load) begin
+	if (load && ~invalidate) begin
 		child <= (parent << 1) + lru_out[parent] + 1'b1;
 		child_valid <= 1'b1;
 	end

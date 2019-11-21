@@ -8,61 +8,68 @@ module pseudo_lru #(
 	 input hit,
 	 input [s_assoc-1:0] way_onehot,
 	 output logic [s_width-1:0] way_out,
-	 output logic valid
+	 output logic lru_valid
 );
-
-//clk,
-//read,
-//load,
-//rindex,
-//windex,
-//datain,
-//dataout
 
 logic [s_assoc-2:0] new_lru;
 logic [s_assoc-2:0] lru_out;
-logic [s_width-1:0] indices [s_width-1:0];
-logic [s_width-1:0] index_valid;
+logic [s_width-1:0] miss_indices [s_width-1:0];
+logic [s_width-1:0] miss_index_valid;
 logic [s_width-1:0] way_in;
 logic [s_width-1:0] hit_index;
 logic [s_width-1:0] hit_indices [s_width-1:0];
 logic [s_width-1:0] hit_index_valid;
-logic hit_update;
-logic update_lru;
 
-assign indices[0] = 0;
-assign valid = index_valid[s_width-1];
-assign hit_index = s_leaf[s_width-1:0] + (way_in >> 1);
+logic hit_last_index_valid;
+logic miss_last_index_valid;
+logic way_valid;
+
+logic hit_valid;
+logic miss_valid;
+logic hit_update;
+logic miss_update;
+logic indices_invalid;
+
+assign miss_indices[0] = 0;
 assign hit_indices[0] = hit_index;
-assign hit_index_valid[0] = hit;
+
+assign hit_last_index_valid = hit_index_valid[s_width-1];
+assign miss_last_index_valid = miss_index_valid[s_width-1];
+assign way_valid = miss_index_valid[s_width-1];
+assign hit_index = s_leaf[s_width-1:0] + (way_in >> 1);
+
+assign hit_index_valid[0] = hit_valid;
+assign miss_index_valid[0] = miss_valid;
+
+pseudo_lru_control  plru_ctrl(.*);
 
 way_calc #(s_assoc) lru_way_out (
 	.lru_out (lru_out),
-	.leaf_index (indices[s_width-1]),
+	.leaf_index (miss_indices[s_width-1]),
 	.way_out (way_out)
 );
 
 register #(s_assoc-1) lru_reg (
    .clk (clk),
-   .load (update_lru),
+   .load (hit_update || miss_update),
    .in (new_lru),
    .out (lru_out)
 );
 
 lru_index_calc #(s_assoc) index_calculator [s_width-2:0](
 	.clk (clk),
-	.load(index_valid[s_width-2:0]),
-	.load_lru (load_lru),
-	.parent (indices[s_width-2:0]),
+	.load(miss_index_valid[s_width-2:0]),
+	.invalidate (indices_invalid),
+	.parent (miss_indices[s_width-2:0]),
 	.lru_out (lru_out),
-	.child (indices[s_width-1:1]),
-	.child_valid (index_valid[s_width-1:1])
+	.child (miss_indices[s_width-1:1]),
+	.child_valid (miss_index_valid[s_width-1:1])
 );
 
 lru_hit_index_calc #(s_assoc) hit_index_calculator [s_width-2:0](
 	.clk (clk),
 	.load(hit_index_valid[s_width-2:0]),
-	.hit_load_lru (hit && load_lru),
+	.invalidate (indices_invalid),
 	.child (hit_indices[s_width-2:0]),
 	.parent (hit_indices[s_width-1:1]),
 	.parent_valid (hit_index_valid[s_width-1:1])
@@ -70,22 +77,14 @@ lru_hit_index_calc #(s_assoc) hit_index_calculator [s_width-2:0](
 
 lru_update #(s_assoc) lru_updater(
 	.clk (clk),
-	.hit (hit),
-	.indices (indices),
+	.indices (miss_indices),
 	.hit_indices (hit_indices),
 	.lru_out (lru_out),
-	.valid (&(index_valid)),
-	.hit_valid (hit_index_valid),
+	.hit_last_index_valid (hit_index_valid[s_width-2] && hit_valid),
+	.miss_last_index_valid (miss_index_valid[s_width-2] && miss_valid),
 	.way_in (way_in),
-	.new_lru (new_lru),
-	.hit_update (hit_update),
-	.set_index_valid(index_valid[0])
+	.new_lru (new_lru)
 );
-
-always_ff @(posedge clk) begin
-	if (hit_update)
-		
-end
 
 always_comb begin
 	unique case (way_onehot)
@@ -98,12 +97,6 @@ always_comb begin
 		8'h40 : way_in = 3'h6;
 		8'h80 : way_in = 3'h7;
 		default : way_in = 3'bXXX;
-	endcase
-	
-	unique case (hit_index_valid[0])
-		1'b0 : update_lru = load_lru;
-		1'b1 : update_lru = hit_update;
-		default : update_lru = load_lru;
 	endcase
 end
 

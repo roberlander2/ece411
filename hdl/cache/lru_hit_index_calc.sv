@@ -4,17 +4,14 @@ module lru_hit_index_calc #(
 )(
 	input clk,
 	input load,
-	input hit_load_lru,
+	input invalidate,
 	input [s_width-1:0] child,
 	output logic [s_width-1:0] parent,
 	output logic parent_valid
 );
 
 always_ff @(posedge clk) begin
-	if (hit_load_lru) begin
-		parent_valid <= 1'b0;
-	end
-	else if (load) begin
+	if (load && ~invalidate) begin
 		parent <= (child - 1'b1) >> 1;
 		parent_valid <= 1'b1;
 	end

@@ -6,7 +6,7 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 bit clk;
 int timeout = 1000000;
-logic valid;
+logic lru_valid;
 logic [2:0] way_out;
 logic load_lru;
 logic [7:0] way_onehot;
@@ -33,7 +33,7 @@ task pseudo_lru_tests(input int count);
         load_lru = 1'b1;
         @(posedge clk);
         load_lru = 1'b0;
-        @(posedge clk iff valid);
+        @(posedge clk iff lru_valid);
         $display("Hit vector = %8b: LRU way = %3b, LRU array = %7b at time = %0t", way_onehot, way_out, dut.lru_out, $time);
     end
     $display("Finishing Pseudo LRU Tests");

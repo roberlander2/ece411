@@ -7,6 +7,7 @@ import marmux::*;
 import cmpmux::*;
 import alumux::*;
 import regfilemux::*;
+import bpredmux::*;
 
 typedef logic [31:0] rv32i_word;
 typedef logic [4:0] rv32i_reg;
@@ -119,6 +120,13 @@ typedef struct packed {
 	rv32i_word mem_address;
 	logic [255:0] mem_wdata;
 } l2_go_t;
+
+typedef enum bit [1:0] {
+	local_st = 2'b00,
+	local_lt = 2'b01,
+	global_lt = 2'b10,
+	global_st = 2'b11
+} selector_t;
 
 endpackage : rv32i_types
 

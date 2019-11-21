@@ -50,3 +50,18 @@ typedef enum bit [3:0] {
 } regfilemux_sel_t;
 endpackage
 
+
+package bpredmux;
+typedef enum bit [1:0] {
+	not_taken_correct = 2'b00,
+	taken_correct = 2'b01,
+	alu_out = 2'b10,
+	taken_incorrect = 2'b11
+} bpredmux1_sel_t;
+
+typedef enum bit [1:0] {
+	bpmux1 = 2'b00,
+	jal = 2'b01,
+	jalr = 2'b10
+} bpredmux2_sel_t;
+endpackage

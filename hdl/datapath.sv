@@ -17,17 +17,26 @@ module datapath
 	output logic [3:0] mem_byte_enable,
 	output logic stall
 );
-
+localparam ghr_size = 10;
 //loads
 logic load_pc;
 
+logic is_br;
 logic is_jalr;
 logic is_jal;
 logic is_jalr_mem;
 logic is_jal_mem;
 
+logic load_ghr;
+logic read_gst;
+logic update_gst;
+logic [ghr_size-1:0] ghr_out;
+logic resolution;
+
 //mux outputs
-rv32i_word pcmux_out;
+rv32i_word pcmux1_out;
+rv32i_word pcmux2_out;
+rv32i_word pc_in;
 rv32i_word alumux1_out;
 rv32i_word alumux2_out;
 rv32i_word cmpmux_out;
@@ -36,23 +45,45 @@ rv32i_word mem_addressmux_out;
 
 //mux selects
 pcmux::pcmux_sel_t pcmux_sel;
+bpredmux::bpredmux1_sel_t bpmux1_sel;
+bpredmux::bpredmux2_sel_t bpmux2_sel;
 
 //module outputs
 control_word_t cw;
 control_word_t cw_mux_out;
 rv32i_word alu_out;
 logic cmp_out;
+logic mispredict; //flush due to a mispredict
+logic mispred_flush;
 logic br_en;
 logic br_en_flush;
 logic flush;
+logic branch_taken;
+logic pred_sel;
+logic prediction;
+logic local_prediction;
+logic global_prediction;
+logic gshare_prediction;
+logic btb_hit;
+logic localtable_prediction;
+logic globaltable_prediction;
+logic gsharetable_prediction;
+logic [ghr_size-1:0] gshare_idx;
+rv32i_word target;
 rv32i_word rs1_out;
 rv32i_word rs2_out;
 rv32i_word pc_out;
 
 //pipeline signals
 rv32i_word ifid_pc_out;
+logic ifid_pred;
+logic ifid_pred_sel;
+logic [9:0] ifid_ghr_out;
 
 rv32i_word idex_pc_out;
+logic idex_pred;
+logic idex_pred_sel;
+logic [9:0] idex_ghr_out;
 rv32i_word idex_rs1_out;
 rv32i_word idex_rs2_out;
 control_word_t idex_cw;
@@ -62,6 +93,7 @@ rv32i_word exmem_alu_out;
 rv32i_word exmem_rs2_out;
 rv32i_word exmem_cmp_out;
 control_word_t exmem_cw;
+logic exmem_reso;
 
 rv32i_word memwb_pc_out;
 rv32i_word memwb_alu_out;
@@ -95,13 +127,24 @@ assign iread = 1'b1;
 assign load_pc = load_pipeline;
 assign br_en = ((idex_cw.opcode == op_br) && cmp_out) && ~idex_cw.flush; //execute stage 
 assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
-assign flush = br_en || br_en_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem;
+assign flush = mispredict || mispred_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem; //need to change now
 assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
 assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
+assign is_br = (idex_cw.opcode == op_br) && ~idex_cw.flush;
+assign load_ghr = is_br;
 assign is_jalr_mem = (exmem_cw.opcode == op_jalr) && ~exmem_cw.flush;
 assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
 assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
+assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
+assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
+assign local_prediction = localtable_prediction  && btb_hit && ~br_en;
+assign gshare_prediction = gsharetable_prediction && btb_hit && ~br_en;
+assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
+assign mispred_flush = ~exmem_reso && ~exmem_cw.flush;
+
+assign bpmux1_sel = bpredmux::bpredmux1_sel_t'({mispredict, idex_pred});
+assign bpmux2_sel = bpredmux::bpredmux2_sel_t'({is_jalr, is_jal});
 
 assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
@@ -200,12 +243,66 @@ forward stallRS2 (
 	.fwd(stall_rs2)
 );
 
-//datapath modules
+//Branch Predictor Datapath
+gh_register  #(10) ghr(
+	.clk(clk),
+	.load(load_ghr),
+	.in(br_en),
+	.out(ghr_out)
+);
+/*
+* TODO: create pipeline registers  for
+* ghr_out, prediction, current;y just a local history pred table
+*/
+predict_table local_hist_table(
+	 .clk(clk),
+    .read(load_pipeline),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(pc_out[9:0]),
+    .windex(idex_pc_out[9:0]),
+	 .wtaken(idex_pred),
+    .resolution(resolution),
+    .prediction(localtable_prediction)
+);
+
+
+selector selector(
+	.clk(clk),
+	.load(load_pipeline && is_br),
+	.read(load_pipeline),
+	.pred_used(idex_pred_sel),
+	.resolution(resolution),
+	.pred_sel(pred_sel)
+);
+
+predict_table gshare_table(
+	 .clk(clk),
+    .read(load_pipeline),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(ghr_out ^ pc_out[9:0]),
+    .windex(idex_ghr_out ^ idex_pc_out[9:0]),
+	 .wtaken(idex_pred),
+    .resolution(resolution),
+    .prediction(gsharetable_prediction)
+);
+
+BTB btb(
+	.clk(clk), 
+	.rPC(pc_out),
+	.wPC(idex_pc_out),
+	.load(is_br && load_pipeline),
+	.read(load_pipeline && ~stall),
+	.wtarget(alu_out),
+	.rtarget(target),
+	.btb_hit(btb_hit)
+);
+
+//CPU datapath
 //fetch
 pc PC(
 	.clk(clk),
 	.load(load_pc && ~stall),
-	.in(pcmux_out),
+	.in(pc_in),
 	.out(pc_out)
 );
 
@@ -261,12 +358,54 @@ register ifid_PC(
     .out  (ifid_pc_out)
 );
 
+register #(1) ifid_prediction(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(prediction),
+	 .out(ifid_pred)
+);
+
+register #(1) ifid_pred_used(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(pred_sel),
+	 .out(ifid_pred_sel)
+);
+
+register #(10) ifid_ghr(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ghr_out),
+	 .out(ifid_ghr_out)
+);
+
 //ID/EX
 register idex_PC(
     .clk  (clk),
     .load (load_pipeline),
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
+);
+
+register #(1) idex_prediction(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ifid_pred),
+	 .out(idex_pred)
+);
+
+register #(1) idex_pred_used(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ifid_pred_sel),
+	 .out(idex_pred_sel)
+);
+
+register #(10) idex_ghr(
+	 .clk(clk),
+	 .load(load_pipeline && ~stall),
+	 .in(ifid_ghr_out),
+	 .out(idex_ghr_out)
 );
 
 register idex_RS1(
@@ -291,6 +430,13 @@ cw_register idex_CW(
 );
 
 //EX/MEM
+register #(1) exmem_resolution(
+	 .clk(clk),
+	 .load(load_pipeline),
+	 .in(resolution),
+	 .out(exmem_reso)
+);
+
 register exmem_PC(
     .clk  (clk),
     .load (load_pipeline),
@@ -456,14 +602,40 @@ end
 
 
 always_comb begin	 
-	 //fetch
-    unique case (pcmux_sel)	
-        pcmux::pc_plus4: pcmux_out = pc_out + 4;
-		  pcmux::alu_out: pcmux_out = alu_out;
-		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
-        default: pcmux_out = pc_out + 4;
-    endcase
-	 	 
+//	 //fetch
+//    unique case (pcmux_sel & mispredict)	
+//        pcmux::pc_plus4: pcmux_out = idex_pc_out + 4;
+//		  pcmux::alu_out: pcmux_out = alu_out;
+//		  pcmux::alu_mod2: pcmux_out = alu_out & 32'hFFFFFFFE;
+//        default: pcmux_out = pc_out + 4;
+//    endcase
+
+	 unique case(bpmux1_sel)
+		bpredmux::not_taken_correct: pcmux1_out = pc_out + 4;
+		bpredmux::taken_correct: pcmux1_out = pc_out + 4;
+		bpredmux::alu_out: pcmux1_out = alu_out;
+		bpredmux::taken_incorrect: pcmux1_out = idex_pc_out + 4;
+	 endcase
+	 
+	  unique case(bpmux2_sel)
+		bpredmux::bpmux1 : pcmux2_out = pcmux1_out;
+		bpredmux::jal: pcmux2_out = alu_out;
+		bpredmux::jalr: pcmux2_out = alu_out & 32'hFFFFFFFE;
+		default: pcmux2_out = pcmux1_out;
+	  endcase
+	 
+	 unique case(pred_sel)
+		1'b0: prediction = local_prediction;
+		1'b1: prediction = gshare_prediction;
+		default: prediction = local_prediction;
+	 endcase
+	 
+	 unique case(prediction)
+		1'b0:pc_in = pcmux2_out;
+		1'b1:pc_in = target;
+		default: pc_in = pcmux2_out;
+	 endcase
+	 
 	 //execute
 	 unique case (idex_cw.alumux1_sel)
 		 alumux::rs1_out: alumux1_out = alu_in1;

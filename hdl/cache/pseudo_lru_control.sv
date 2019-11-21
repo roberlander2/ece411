@@ -23,10 +23,10 @@ enum int unsigned {
 always_comb
 begin : next_state_logic
 	  unique case (state)
-		 idle: next_state = 
-		 hit_update: next_state = 
-		 miss_update: next_state = 
-		 recalc: next_state = 
+		 idle: next_state = load_lru ? (hit ? hit_update : miss_update) : idle;
+		 hit_update: next_state = recalc;
+		 miss_update: next_state = idle;
+		 recalc: next_state = idle;
 	endcase
 end 
 

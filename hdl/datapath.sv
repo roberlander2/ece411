@@ -139,8 +139,7 @@ assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
 assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
 assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
 assign local_prediction = localtable_prediction  && btb_hit && ~br_en;
-assign global_prediction = globaltable_prediction  && btb_hit && ~br_en;
-//assign gshare_prediction = gsharetable_prediction && btb_hit;
+assign gshare_prediction = gsharetable_prediction && btb_hit && ~br_en;
 assign mispredict= ~resolution && ~idex_cw.flush; //if we have an incorrect prediction, need to flush
 assign mispred_flush = ~exmem_reso && ~exmem_cw.flush;
 
@@ -266,36 +265,26 @@ predict_table local_hist_table(
     .prediction(localtable_prediction)
 );
 
-predict_table global_hist_table(
-	 .clk(clk),
-    .read(load_pipeline),
-    .load(load_pipeline), //update predictor table  only in EXECUTE stage
-    .rindex(ghr_out),
-    .windex(idex_ghr_out),
-	 .wtaken(idex_pred),
-    .resolution(resolution),
-    .prediction(globaltable_prediction)
-);
 
 selector selector(
 	.clk(clk),
-	.load(load_pipeline),
+	.load(load_pipeline && is_br),
 	.read(load_pipeline),
 	.pred_used(idex_pred_sel),
 	.resolution(resolution),
 	.pred_sel(pred_sel)
 );
 
-//predict_table gshare_table(
-//	 .clk(clk),
-//    .read(load_pipeline),
-//    .load(load_pipeline), //update predictor table  only in EXECUTE stage
-//    .rindex(ghr_out ^ pc_out[9:0]),
-//    .windex(idex_ghr_out ^ idex_pc_out[9:0]),
-//	 .wtaken(idex_pred),
-//    .resolution(resolution),
-//    .prediction(gsharetable_prediction)
-//);
+predict_table gshare_table(
+	 .clk(clk),
+    .read(load_pipeline),
+    .load(load_pipeline), //update predictor table  only in EXECUTE stage
+    .rindex(ghr_out ^ pc_out[9:0]),
+    .windex(idex_ghr_out ^ idex_pc_out[9:0]),
+	 .wtaken(idex_pred),
+    .resolution(resolution),
+    .prediction(gsharetable_prediction)
+);
 
 BTB btb(
 	.clk(clk), 
@@ -637,7 +626,7 @@ always_comb begin
 	 
 	 unique case(pred_sel)
 		1'b0: prediction = local_prediction;
-		1'b1: prediction = global_prediction;
+		1'b1: prediction = gshare_prediction;
 		default: prediction = local_prediction;
 	 endcase
 	 

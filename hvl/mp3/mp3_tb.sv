@@ -8,9 +8,13 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
 int timeout = 1000000;   // Feel Free to adjust the timeout value
+int correct;
+int num_inst;
 
 initial begin
     itf.halt = 1'b0;
+    correct = 1'b0;
+    num_inst = 1'b0;
 end
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
@@ -23,12 +27,22 @@ always @(posedge itf.clk) begin
     if (dut.dp.load_pc && (dut.dp.memwb_pc_out == dut.dp.ifid_pc_out) && dut.dp.idex_cw.flush && dut.dp.exmem_cw.flush) begin
         itf.halt <= 1'b1;
     end
-    if (itf.halt)
-        $finish;
+    if (itf.halt) begin
+      $display("Correct: %d, Total Instructions: %d", correct, num_inst);
+      $finish;
+    end
     if (timeout == 0) begin
         $display("TOP: Timed out");
         $finish;
     end
+    if(dut.dp.resolution && dut.dp.load_pipeline) begin
+      correct <= correct + 1;
+    end
+
+    if(dut.dp.load_pipeline) begin
+      num_inst <= num_inst + 1;
+    end
+
     timeout <= timeout - 1;
 end
 

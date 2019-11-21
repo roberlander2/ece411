@@ -59,7 +59,8 @@ always_comb begin
 											2'b10: _update = 2'b01;
 											2'b11: _update = 2'b10;
 										endcase
-								endcase
+								default: _update = 2'b00;
+							endcase
 					1'b1: unique case(wtaken)
 								1'b0:	 case(data[windex]) // correct, not taken
 											2'b00: _update = 2'b00;
@@ -73,7 +74,9 @@ always_comb begin
 											2'b10: _update = 2'b11;
 											2'b11: _update = 2'b11;
 										endcase
+								default: _update = 2'b00;
 							endcase
+					default: _update = 2'b00;
 				endcase
 	endcase
 end

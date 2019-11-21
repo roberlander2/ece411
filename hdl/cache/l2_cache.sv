@@ -3,6 +3,8 @@ import rv32i_types::*;
 module l2_cache #(
     parameter s_offset = 5,
     parameter s_index  = 3,
+	 parameter s_assoc  = 8,
+	 parameter s_width = $clog2(s_assoc),
     parameter s_tag    = 32 - s_offset - s_index,
     parameter s_mask   = 2**s_offset,
     parameter s_line   = 8*s_mask,
@@ -58,8 +60,8 @@ assign l2_ret.mem_rdata = mem_rdata;
 //assign mem_read = l2_go.mem_read;
 //assign mem_write = l2_go.mem_write;
 
-l2_cache_control control(.*);
+l2_cache_control #(s_assoc) control(.*);
 
-l2_cache_datapath #(s_offset, s_index) datapath(.*);
+l2_cache_datapath #(s_offset, s_index, s_assoc) datapath(.*);
 
 endmodule : l2_cache

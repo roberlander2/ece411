@@ -5,7 +5,6 @@ module pseudo_lru #(
 )(
 	 input clk,
 	 input load_lru,
-	 input hit,
 	 input [s_assoc-1:0] way_onehot,
 	 output logic [s_width-1:0] way_out,
 	 output logic lru_valid
@@ -23,6 +22,7 @@ logic [s_width-1:0] hit_index_valid;
 logic hit_last_index_valid;
 logic miss_last_index_valid;
 logic way_valid;
+logic hit;
 
 logic hit_valid;
 logic miss_valid;
@@ -37,6 +37,7 @@ assign hit_last_index_valid = hit_index_valid[s_width-1];
 assign miss_last_index_valid = miss_index_valid[s_width-1];
 assign way_valid = miss_index_valid[s_width-1];
 assign hit_index = s_leaf[s_width-1:0] + (way_in >> 1);
+assign hit = |(way_onehot);
 
 assign hit_index_valid[0] = hit_valid;
 assign miss_index_valid[0] = miss_valid;

@@ -1,4 +1,7 @@
-module l2_cache_control (
+module l2_cache_control #(
+	parameter s_assoc  = 8,
+	parameter s_width = $clog2(s_assoc)
+)(
 	input clk,
 	input logic mem_write,
 	input logic mem_read,

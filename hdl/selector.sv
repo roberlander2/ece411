@@ -14,7 +14,7 @@ selector_t data = local_lt;
 selector_t _update;
 logic _pred_sel;
 
-assign pred_sel = (read) ? _pred_sel : 1'hX;
+assign pred_sel = (read) ? _pred_sel : 1'b0;
 always_comb begin
 	unique case (data)
 		local_st: begin

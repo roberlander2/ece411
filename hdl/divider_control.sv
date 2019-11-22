@@ -29,14 +29,14 @@ assign divisor_in = divisor_i;
 //assign load_remainder = 1'b1
 
 function void set_defaults();
-	done_bit = 1''b0;
-  load_divisor = 1'b1;
-  load_remainder = 1'b1;
+	done_bit = 1'b0;
+	load_divisor = 1'b1;
+	load_remainder = 1'b1;
 endfunction
 
 enum int unsigned {
-  load,
-  start,
+	load,
+	start,
 	subtract,
 	test,
 	done
@@ -48,19 +48,19 @@ end
 
 always_comb begin
 	unique case(state)
-    load:
-      next_state = start;
+		load:
+			next_state = start;
 		start:
 			next_state = hit_detection;
-
 		subtract:
 			next_state = test;
-		test:
-		begin
-			if(counter == 6'd32)
-				next_state = done;
-			else
-				next_state = subtract
+		test: begin
+					if(counter == 6'd32)
+						next_state = done;
+					else
+						next_state = subtract;
+				end
+		done: next_state = start;
 	default: next_state = start;
 	endcase
 end
@@ -68,15 +68,11 @@ end
 always_comb begin
 	set_defaults();
 	unique case(state)
-    load: //may or may not need this state i'm not sure
-    begin
-      remainder_in = {32'b0, dividend};
-    end
-		start:
-    begin
-      if(_signed)
-      begin
-        //if(dividend[31])  //handle sign bit somehow
+		load: begin
+					remainder_in = {32'b0, dividend};
+				end
+		start: begin
+					if(_signed) begin //if(dividend[31])  //handle sign bit somehow
       end
       remainder_in << 1'b1;
     end

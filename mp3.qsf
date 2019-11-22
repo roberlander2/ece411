@@ -75,6 +75,8 @@ set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pmem_random_cache_tb.sv 
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/random_dcache_tb.sv -section_id random_dcache_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id random_dcache_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hdl/cache/dcache.sv -section_id random_dcache_tb
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SYSTEMVERILOG_FILE div_types.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/predictor_table.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/global_history_reg.sv
 set_global_assignment -name SDC_FILE mp3.out.sdc
@@ -117,4 +119,5 @@ set_global_assignment -name SYSTEMVERILOG_FILE hdl/btb_array.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/selector.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/multiplier.sv
 set_global_assignment -name SYSTEMVERILOG_FILE mult_types.sv
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/divider.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/divider_control.sv

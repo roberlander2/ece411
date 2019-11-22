@@ -25,5 +25,4 @@ register #(64) remainder (
     .out(remainder_out)
 );
 
-
 endmodule : divider

@@ -1,20 +1,9 @@
 package mult_types;
-    parameter int width_p = 32;
-    parameter int min_operand = 0;
-    parameter int operand_limit = 1 << width_p;
-    typedef bit [width_p-1:0] operand_t;
-    typedef bit [width_p*2-1:0] result_t;
-    typedef enum {
-        BAD_PRODUCT = 0,
-        NOT_READY   = 1,
-        NUM_ERRORS  = 2
-    } error_e;
-
     typedef struct packed {
         logic reset_n;
         logic start;
-        operand_t multiplicand;
-        operand_t multiplier;
+        logic [31:0] multiplicand;
+		  logic [31:0] multiplier;
     } multi_inputs_t;
 
     typedef enum bit[2:0] {
@@ -33,9 +22,9 @@ package mult_types;
         int iteration;
         op_e op;
     
-        logic[width_p-1:0] M;
+        logic[31:0] M;
         logic C;
-        logic[width_p-1:0] A;
-        logic[width_p-1:0] Q;
+        logic[31:0] A;
+        logic[31:0] Q;
     } mstate_s;
 endpackage : mult_types

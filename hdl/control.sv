@@ -29,6 +29,12 @@ function void setALU(alumux::alumux1_sel_t sel1,
       cw.aluop = op;
 endfunction
 
+function void setMUL(logic signed1, logic signed2, logic half_sel);
+	cw.signed1 = signed1;
+	cw.signed2 = signed2;
+	cw.half_sel = half_sel;
+endfunction
+
 function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 	cw.cmpmux_sel = sel;
 	cw.cmpop = op;
@@ -62,6 +68,9 @@ function void set_defaults();
 	cw.rs2_valid = 1'b0;
 	cw.rd_valid = 1'b0;
 	cw.flush = 1'b0;
+	cw.signed1 = 1'b0;
+	cw.signed2 = 1'b0;
+	cw.half_sel = 1'b0;
 endfunction
 
 always_comb begin : opcode_actions
@@ -187,49 +196,56 @@ always_comb begin : opcode_actions
 						setRS1valid();
 						setRS2valid();
 						setRDvalid();
-						unique case(arith_funct3_t'(cw.funct3))
-							add: begin
-									  loadRegfile(regfilemux::alu_out);
-									  unique case(cw.funct7)
-										7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_add);
-										7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sub);
-										default: ;
-									  endcase 
-								  end
-							sll: begin
-									  loadRegfile(regfilemux::alu_out);
-									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sll); 
-								  end
-							slt: 
-								begin
-									loadRegfile(regfilemux::br_en);
-									setCMP(cmpmux::rs2_out, blt);
-								end
-							sltu:
-								begin
-									cw.regfilemux_sel = regfilemux::br_en;
-									setCMP(cmpmux::rs2_out, bltu);
-								end
-							axor: begin
-									  loadRegfile(regfilemux::alu_out);
-									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_xor); 
-								  end
-							sr: begin
-									loadRegfile(regfilemux::alu_out);
-									unique case(cw.funct7)
-										7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_srl);
-										7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sra);
-										default: ;
+						unique case(cw.funct7)
+						//multiply funct7: 0000001
+							7'b0000001: begin
+												;
+											end 
+							default:
+										unique case(arith_funct3_t'(cw.funct3))
+											add: begin
+													  loadRegfile(regfilemux::alu_out);
+													  unique case(cw.funct7)
+														7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_add);
+														7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sub);
+														default: ;
+													  endcase 
+												  end
+											sll: begin
+													  loadRegfile(regfilemux::alu_out);
+													  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sll); 
+												  end
+											slt: 
+												begin
+													loadRegfile(regfilemux::br_en);
+													setCMP(cmpmux::rs2_out, blt);
+												end
+											sltu:
+												begin
+													cw.regfilemux_sel = regfilemux::br_en;
+													setCMP(cmpmux::rs2_out, bltu);
+												end
+											axor: begin
+													  loadRegfile(regfilemux::alu_out);
+													  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_xor); 
+												  end
+											sr: begin
+													loadRegfile(regfilemux::alu_out);
+													unique case(cw.funct7)
+														7'b0000000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_srl);
+														7'b0100000: setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_sra);
+														default: ;
+													endcase
+												 end
+											aor: begin
+													  loadRegfile(regfilemux::alu_out);
+													  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_or); 
+												  end
+											aand: begin
+													  loadRegfile(regfilemux::alu_out);
+													  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_and); 
+												  end
 									endcase
-								 end
-							aor: begin
-									  loadRegfile(regfilemux::alu_out);
-									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_or); 
-								  end
-							aand: begin
-									  loadRegfile(regfilemux::alu_out);
-									  setALU(alumux::rs1_out, alumux::rs2_out, 1'b1, alu_and); 
-								  end
 					endcase
 			end 
 		default: ;

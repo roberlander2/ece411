@@ -1,14 +1,16 @@
 import mult_types::*;
 
-module add_shift_multiplier
+module multiplier
 (
     input logic clk_i,
     input logic reset_n_i,
-    input operand_t multiplicand_i,
-    input operand_t multiplier_i,
+	 input logic signed1,
+	 input logic signed2,
+    input logic [31:0] multiplicand_i,
+    input logic [31:0] multiplier_i,
     input logic start_i,
     output logic ready_o,
-    output result_t product_o,
+    output logic [63:0] product_o,
     output logic done_o
 );
 
@@ -18,21 +20,28 @@ mstate_s ms_reset;
 mstate_s ms_init;
 mstate_s ms_add;
 mstate_s ms_shift;
-logic update_state;
-logic unsigned_prod = {ms.A, ms.Q};
-logic multiplicand_sign ;
-assign multiplicand_sign  = (multiplicand_i >= 0);
 
-logic multiplier_sign ;
-assign multiplier_sign  = (multiplier_i >= 0);
+logic update_state;
+logic [63:0] unsigned_prod;
+assign unsigned_prod = {ms.A, ms.Q};
+logic multiplicand_positive;
+assign multiplicand_positive = ~multiplicand_i[31];
+
+logic multiplier_positive;
+assign multiplier_positive = ~multiplier_i[31];
+
+/*
+*Final Sign is low if both operands are postive or negative
+*Therefore, final sign  ==0  means positive result
+*/
 
 logic final_sign;
-assign final_sign = multiplier_sign ^ multiplicand_sign;
+assign final_sign = multiplier_positive ^ multiplicand_positive; 
 
 
 assign ready_o = ms.ready;
 assign done_o = ms.done;
-assign product_o = (final_sign) ? (~unsigned_prod + 1'b1) : unsigned_prod;
+assign product_o = (final_sign && (signed1 || signed2)) ? (~unsigned_prod + 1'b1) : unsigned_prod;
 
 // Describes reset state
 function void reset(output mstate_s ms_next);
@@ -41,8 +50,8 @@ function void reset(output mstate_s ms_next);
 endfunction
 
 // Describes multiplication initialization state
-function void init(input logic[width_p-1:0] multiplicand,
-                   input logic[width_p-1:0] multiplier,
+function void init(input logic[31:0] multiplicand,
+                   input logic[31:0] multiplier,
                    output mstate_s ms_next);
 						 
     ms_next.ready = 1'b0;
@@ -50,10 +59,10 @@ function void init(input logic[width_p-1:0] multiplicand,
     ms_next.iteration = 0;
     ms_next.op = ADD;
 
-    ms_next.M = (multiplicand >= 0) ? multiplicand : (~(multiplicand) + 1'b1);
+    ms_next.M = (signed1) ? ((multiplicand_positive) ? multiplicand : (~multiplicand + 1)) : multiplicand; 
     ms_next.C = 1'b0;
     ms_next.A = 0;
-    ms_next.Q = (multiplier >= 0) ? multiplier : (~(multiplier) + 1'b1);
+    ms_next.Q = (signed2) ? ((multiplier_positive) ? multiplier : (~multiplier + 1)) : multiplier; 
 endfunction
 
 // Describes state after add occurs
@@ -69,10 +78,10 @@ endfunction
 // Describes state after shift occurs
 function void shift(input mstate_s cur, output mstate_s next);
       next = cur;
-      {next.A, next.Q} = {cur.C, cur.A, cur.Q[width_p-1:1]};
+      {next.A, next.Q} = {cur.C, cur.A, cur.Q[31:1]};
       next.op = ADD;
       next.iteration += 1;
-      if (next.iteration == width_p) begin
+      if (next.iteration == 32) begin
             next.op = DONE;
             next.done = 1'b1;
             next.ready = 1'b1;
@@ -110,5 +119,5 @@ end
 /*****************************************************************************/
 
 
-endmodule : add_shift_multiplier
+endmodule : multiplier
 

@@ -26,18 +26,18 @@ end
 initial timestamp = 0;
 always @(posedge clk) timestamp += 1;
 
-function automatic void tb_report_dut_error(error_e err);
-    case (err)
-        BAD_PRODUCT: stu_errors.bp[timestamp] = 1'b1;
-        NOT_READY: stu_errors.nr[timestamp] = 1'b1;
-    endcase
-endfunction
+// function automatic void tb_report_dut_error(error_e err);
+//     case (err)
+//         BAD_PRODUCT: stu_errors.bp[timestamp] = 1'b1;
+//         NOT_READY: stu_errors.nr[timestamp] = 1'b1;
+//     endcase
+// endfunction
 
-modport testbench (
+modport mult_tb (
         output mult_op, rdy, product, done,
         input clk, finish, reset_n,
                 multiplicand, multiplier, start,
-        ref stu_errors, timestamp, tb_report_dut_error
+        ref timestamp
     );
 
 task finish();

@@ -7,8 +7,7 @@ module plru_array #(
     clk,
     read,
     load,
-    rindex,
-    windex,
+    index,
     tag_hit,
     dataout,
 	 valid
@@ -19,15 +18,14 @@ localparam num_sets = 2**s_index;
 input clk;
 input read;
 input load;
-input [s_index-1:0] rindex;
-input [s_index-1:0] windex;
+input [s_index-1:0] index;
 input [s_assoc-1:0] tag_hit;
 output logic [s_width-1:0] dataout;
 output logic valid;
 
 logic [num_sets-1:0] lru_valid;
-logic [num_sets-1:0] load_plru;
-logic [s_width-1:0] data [num_sets-1:0] = '{default: '0};
+logic [num_sets-1:0] load_plru = 0;
+logic [s_width-1:0] data [num_sets-1:0];
 
 pseudo_lru #(s_assoc) plru [num_sets-1:0] (
 	 .clk(clk),
@@ -40,14 +38,16 @@ pseudo_lru #(s_assoc) plru [num_sets-1:0] (
 always_ff @(posedge clk)
 begin
     if (read) begin
-		  dataout <= data[rindex];
-		  valid <= lru_valid[rindex];
+		  dataout <= data[index];
+		  valid <= lru_valid[index];
 	 end
-
-    if (load)
-        load_plru[windex] <= 1'b1;
 end
 
-
+always_comb begin
+	if (load)
+		load_plru = {{(s_assoc-1){1'b0}}, 1'b1} << index;
+	else
+		load_plru = 0;
+end
 
 endmodule : plru_array

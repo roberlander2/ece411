@@ -29,20 +29,17 @@ module l2_cache #(
 );
 
 logic hit;
-logic tag1_hit;
-logic tag0_hit;
+logic [s_assoc-1:0] tag_hit;
 logic load_lru;
-logic [1:0] load_data;
-logic [1:0] load_tag;
-logic set_dirty0;
-logic clear_dirty0;
-logic set_dirty1;
-logic clear_dirty1;
+logic [s_assoc-1:0] load_data;
+logic [s_assoc-1:0] load_tag;
+logic [s_assoc-1:0] set_dirty;
+logic [s_assoc-1:0] clear_dirty;
+logic [s_assoc-1:0] set_valid;
 logic read_data;
-logic set_valid1;
-logic set_valid0;
 logic dirty_ctrl;
-logic lru_out;
+logic [s_width-1:0] lru_out;
+logic lru_valid;
 
 logic mem_resp;
 logic [s_line-1:0] mem_rdata;

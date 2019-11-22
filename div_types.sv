@@ -1,21 +1,15 @@
 package div_types;
     parameter int width_p = 32;
     parameter int operand_limit = 1 << width_p;
-    typedef bit [width_p-1:0] operand_t;
+    typedef bit [width_p-1:0] dividend_t;
+    typedef bit [width_p-1:0] divisor_t;
     typedef bit [width_p-1:0] quotient_t;
-	 typedef bit [width_p-1:0] remainder_t;
+	 typedef bit [width_p*2-1:0] remainder_t;
     typedef enum {
         BAD_QUOTIENT = 0,
         NOT_READY   = 1,
         NUM_ERRORS  = 2
     } error_e;
-
-    typedef struct packed {
-        logic reset_n;
-        logic start;
-        operand_t multiplicand;
-        operand_t multiplier;
-    } multi_inputs_t;
 
     typedef enum bit[2:0] {
         NONE=3'b0, ADD=3'b101, SHIFT=3'b110, DONE=3'b011
@@ -29,7 +23,7 @@ package div_types;
         logic done;
         int iteration;
         op_e op;
-    
+
         logic[width_p-1:0] M;
         logic C;
         logic[width_p-1:0] A;

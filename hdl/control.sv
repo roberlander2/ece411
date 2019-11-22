@@ -35,6 +35,12 @@ function void setMUL(logic signed1, logic signed2, logic half_sel);
 	cw.half_sel = half_sel;
 endfunction
 
+function void setDiv(logic signed1, logic signed2, logic half_sel);
+	cw.signed1 = signed1;
+	cw.signed2 = signed2;
+	cw.half_sel = half_sel;
+endfunction
+
 function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 	cw.cmpmux_sel = sel;
 	cw.cmpop = op;
@@ -199,7 +205,16 @@ always_comb begin : opcode_actions
 						unique case(cw.funct7)
 						//multiply funct7: 0000001
 							7'b0000001: begin
-												;
+												unique case(cw.funct3)
+													3'b000: setMul(1'b0, 1'b0, 1'b0); // MUL
+													3'b001: setMul(1'b1, 1'b1, 1'b1); // MULH
+													3'b010: setMul(1'b1, 1'b0, 1'b1); // MULHSU
+													3'b011: setMul(1'b0, 1'b0, 1'b1); // MULHU
+													3'b100: setDiv(1'b1, 1'b1, 1'b0); // DIV
+													3'b101: setDiv(1'b0, 1'b0, 1'b0); // DIVU
+													3'b110: setDiv(1'b1, 1'b1, 1'b0); // REM
+													3'b111: setDiv(1'b0, 1'b0, 1'b0); // REMU
+												endcase
 											end 
 							default:
 										unique case(arith_funct3_t'(cw.funct3))

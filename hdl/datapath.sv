@@ -44,7 +44,6 @@ rv32i_word regfilemux_out;
 rv32i_word mem_addressmux_out;
 
 //mux selects
-pcmux::pcmux_sel_t pcmux_sel;
 bpredmux::bpredmux1_sel_t bpmux1_sel;
 bpredmux::bpredmux2_sel_t bpmux2_sel;
 
@@ -56,7 +55,6 @@ logic cmp_out;
 logic mispredict; //flush due to a mispredict
 logic mispred_flush;
 logic br_en;
-logic br_en_flush;
 logic flush;
 logic branch_taken;
 logic pred_sel;
@@ -68,7 +66,6 @@ logic btb_hit;
 logic localtable_prediction;
 logic globaltable_prediction;
 logic gsharetable_prediction;
-logic [ghr_size-1:0] gshare_idx;
 rv32i_word target;
 rv32i_word rs1_out;
 rv32i_word rs2_out;
@@ -126,7 +123,7 @@ assign mem_address = mem_addressmux_out;
 assign iread = 1'b1;
 assign load_pc = load_pipeline;
 assign br_en = ((idex_cw.opcode == op_br) && cmp_out) && ~idex_cw.flush; //execute stage 
-assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
+//assign br_en_flush = ((exmem_cw.opcode == op_br) && exmem_cmp_out) && ~exmem_cw.flush; //memory stage 
 assign flush = mispredict || mispred_flush || is_jalr || is_jal || is_jalr_mem || is_jal_mem; //need to change now
 assign is_jalr = (idex_cw.opcode == op_jalr) && ~idex_cw.flush;
 assign is_jal = (idex_cw.opcode == op_jal) && ~idex_cw.flush;
@@ -135,8 +132,8 @@ assign load_ghr = is_br;
 assign is_jalr_mem = (exmem_cw.opcode == op_jalr) && ~exmem_cw.flush;
 assign is_jal_mem = (exmem_cw.opcode == op_jal) && ~exmem_cw.flush;
 //use normal pc sel if neither of the two instructions in front is a branch
-assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
-assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
+//assign pcmux_sel = pcmux::pcmux_sel_t'({is_jalr, (br_en || is_jal)});
+//assign gshare_idx = ghr_out ^ pc_out[ghr_size-1 + 2:2];
 assign resolution = (idex_pred == br_en) && (pcmux2_out == ifid_pc_out) || (~br_en == ~idex_pred);
 assign local_prediction = localtable_prediction  && btb_hit && ~br_en;
 assign gshare_prediction = gsharetable_prediction && btb_hit && ~br_en;

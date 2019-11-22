@@ -106,4 +106,4 @@ always_comb begin
 	endcase
 end
 
-endmodule : l2_cache_control
+endmodule : divider_control

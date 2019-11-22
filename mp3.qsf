@@ -1,12 +1,12 @@
 # -------------------------------------------------------------------------- #
 #
 # Copyright (C) 2018  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and its AMPP partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
 # the Intel FPGA IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for
@@ -47,9 +47,6 @@ set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (SystemVerilog)"
 set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "SYSTEMVERILOG HDL" -section_id eda_simulation
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
@@ -77,6 +74,11 @@ set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id ra
 set_global_assignment -name EDA_TEST_BENCH_FILE hdl/cache/dcache.sv -section_id random_dcache_tb
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/predictor_table.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/global_history_reg.sv
+set_global_assignment -name EDA_TEST_BENCH_NAME pseudo_lru_tb -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id pseudo_lru_tb
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME pseudo_lru_tb -section_id pseudo_lru_tb
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/plru_array.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/pseudo_lru.sv
 set_global_assignment -name SDC_FILE mp3.out.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_dp.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_control.sv
@@ -115,4 +117,27 @@ set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/l2_go_reg.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/btb.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/btb_array.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/selector.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_index_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_update.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/way_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_hit_index_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/pseudo_lru_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/parameter_mux.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/multi_out_mux.sv
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/magic_dual_port.sv -section_id mp3_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/mp3_tb.sv -section_id mp3_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id mp3_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/physical_memory.sv -section_id mp3_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pmem_random_cache_tb.sv -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/random_icache_tb.sv -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hdl/cache/icache.sv -section_id random_icache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pmem_random_cache_tb.sv -section_id random_dcache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/random_dcache_tb.sv -section_id random_dcache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id random_dcache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hdl/cache/dcache.sv -section_id random_dcache_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pseudo_lru_tb.sv -section_id pseudo_lru_tb
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

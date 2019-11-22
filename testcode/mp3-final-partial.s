@@ -51,8 +51,9 @@ FILLM2:
     andi x1, x1, 0
     andi x2, x2, 0
 
-  HALT:
-      beq x0, x0, HALT
+HALT:
+    beq x0, x0, HALT
+
 #
 # FILLM3:
 #     jal x7,  CalAddress
@@ -183,7 +184,7 @@ Done1:
 #
 SKip1:
     jalr x0, x7, 0
-#
+
 # CalNEXT3:
 #
 #     sw x3, TEMP3, x15
@@ -227,7 +228,7 @@ CalAddress:
     add x5, x1, x5
     slli x5, x5, 2
     jalr x0, x7, 0
-#
+
 # CHECKSUM:
 #
 #     la  x1, M00

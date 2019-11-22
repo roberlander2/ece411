@@ -1,5 +1,5 @@
 package mult_types;
-    parameter int width_p = 8;
+    parameter int width_p = 32;
     parameter int min_operand = 0;
     parameter int operand_limit = 1 << width_p;
     typedef bit [width_p-1:0] operand_t;
@@ -18,11 +18,14 @@ package mult_types;
     } multi_inputs_t;
 
     typedef enum bit[2:0] {
-        NONE=3'b0, ADD=3'b101, SHIFT=3'b110, DONE=3'b011
+        NONE=3'b0, 
+		  ADD=3'b101, 
+		  SHIFT=3'b110, 
+		  DONE=3'b011
     } op_e;
 
-    parameter op_e ready_states [2] = {NONE, DONE};
-    parameter op_e run_states [2] = {ADD, SHIFT};
+//    parameter op_e ready_states [2] = {NONE, DONE};
+//    parameter op_e run_states [2] = {ADD, SHIFT};
 
     typedef struct packed {
         logic ready;

@@ -19,10 +19,20 @@ mstate_s ms_init;
 mstate_s ms_add;
 mstate_s ms_shift;
 logic update_state;
+logic unsigned_prod = {ms.A, ms.Q};
+logic multiplicand_sign ;
+assign multiplicand_sign  = (multiplicand_i >= 0);
+
+logic multiplier_sign ;
+assign multiplier_sign  = (multiplier_i >= 0);
+
+logic final_sign;
+assign final_sign = multiplier_sign ^ multiplicand_sign;
+
 
 assign ready_o = ms.ready;
 assign done_o = ms.done;
-assign product_o = {ms.A, ms.Q};
+assign product_o = (final_sign) ? (~unsigned_prod + 1'b1) : unsigned_prod;
 
 // Describes reset state
 function void reset(output mstate_s ms_next);
@@ -34,15 +44,16 @@ endfunction
 function void init(input logic[width_p-1:0] multiplicand,
                    input logic[width_p-1:0] multiplier,
                    output mstate_s ms_next);
+						 
     ms_next.ready = 1'b0;
     ms_next.done = 1'b0;
     ms_next.iteration = 0;
     ms_next.op = ADD;
 
-    ms_next.M = multiplicand;
+    ms_next.M = (multiplicand >= 0) ? multiplicand : (~(multiplicand) + 1'b1);
     ms_next.C = 1'b0;
     ms_next.A = 0;
-    ms_next.Q = multiplier;
+    ms_next.Q = (multiplier >= 0) ? multiplier : (~(multiplier) + 1'b1);
 endfunction
 
 // Describes state after add occurs

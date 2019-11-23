@@ -21,9 +21,6 @@ package mult_types;
         NONE=3'b0, ADD=3'b101, SHIFT=3'b110, DONE=3'b011
     } op_e;
 
-    parameter op_e ready_states [2] = {NONE, DONE};
-    parameter op_e run_states [2] = {ADD, SHIFT};
-
     typedef struct packed {
         logic ready;
         logic done;

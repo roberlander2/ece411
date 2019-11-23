@@ -58,6 +58,12 @@ logic [31:0] mul1_in;
 logic [31:0] mul2_in;
 logic mul_rdy;
 logic mul_done;
+logic [31:0] remainder;
+logic [31:0] quotient;
+logic [31:0] dividend;
+logic [31:0] divisor;
+logic div_rdy;
+logic div_done;
 logic cmp_out;
 logic mispredict; //flush due to a mispredict
 logic mispred_flush;
@@ -123,7 +129,10 @@ logic [4:0] mem_addrmod4_mult;
 rv32i_word mdrreg_bytemask;
 rv32i_word mdrreg_halfmask;
 
-assign mul_res = (mul_done) ? ((idex_cw.half_sel ) ? mul_out[63:32] : mul_out[31:0]) : 32'bX;
+logic is_mult;
+logic is_div;
+
+assign mul_res = (mul_done) ? ((idex_cw.half_sel) ? mul_out[63:32] : mul_out[31:0]) : 32'bX;
 
 assign mem_addrmod4 = memwb_mem_address[1:0];
 assign mem_addrmod4_mult = mem_addrmod4 << 3;
@@ -159,6 +168,9 @@ assign mem_byte_enable = exmem_cw.wmask << mem_address[1:0];
 assign dread = exmem_cw.mem_read;
 assign dwrite = exmem_cw.mem_write;
 
+assign is_mult = (idex_cw.opcode == op_reg && idex_cw.funct7 == 7'b0000001 && ~idex_cw.funct3[2]);
+assign is_div = (idex_cw.opcode == op_reg && idex_cw.funct7 == 7'b0000001 && idex_cw.funct3[2]);
+
 logic forward_exmem_rs1;
 logic forward_memwb_rs1;
 logic forward_exmem_rs2;
@@ -171,7 +183,7 @@ logic stall_rs2;
 logic _stall;
 
 assign _stall = (stall_rs1 || stall_rs2 ) && (idex_cw.opcode == op_load);
-assign stall = _stall || ~mul_rdy;
+assign stall = _stall || ~mul_rdy || ~div_rdy;
 forward exmem_rs1 (
 	.write(exmem_cw.load_regfile),
 	.valid_src(idex_cw.rs1_valid),
@@ -346,13 +358,25 @@ multiplier MUL(
 	 .clk_i(clk),
     .reset_n_i (1'b1),
 	 .signed1(idex_cw.signed1),
-	 .signed2(idex_cw.signed1),
+	 .signed2(idex_cw.signed2),
     .multiplicand_i(mul1_in),
     .multiplier_i(mul2_in),
-    .start_i(idex_cw.opcode == op_reg && idex_cw.funct7 == 7'b0000001 && load_pipeline),
+    .start_i(is_mult && load_pipeline),
     .ready_o(mul_rdy),
     .product_o(mul_out),
     .done_o(mul_done)
+);
+
+divider DIV(
+	 .clk(clk),
+	 .start_i(is_div && load_pipeline),
+	 .dividend(dividend),
+    .divisor(divisor),
+	 .inputs_signed(idex_cw.signed1 || idex_cw.signed2),
+	 .quotient(quotient),
+    .remainder(remainder),
+	 .ready(div_rdy),
+	 .done(div_done)
 );
 
 cmp CMP (
@@ -376,28 +400,28 @@ reg_mem_data_out MEM_DATA_OUT(
 //IF/ID
 register ifid_PC(
     .clk  (clk),
-    .load (load_pipeline && ~stall && mul_rdy),
+    .load (load_pipeline && ~stall),
     .in   (pc_out),
     .out  (ifid_pc_out)
 );
 
 register #(1) ifid_prediction(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(prediction),
 	 .out(ifid_pred)
 );
 
 register #(1) ifid_pred_used(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(pred_sel),
 	 .out(ifid_pred_sel)
 );
 
 register #(10) ifid_ghr(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(ghr_out),
 	 .out(ifid_ghr_out)
 );
@@ -405,49 +429,49 @@ register #(10) ifid_ghr(
 //ID/EX
 register idex_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
 );
 
 register #(1) idex_prediction(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(ifid_pred),
 	 .out(idex_pred)
 );
 
 register #(1) idex_pred_used(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(ifid_pred_sel),
 	 .out(idex_pred_sel)
 );
 
 register #(10) idex_ghr(
 	 .clk(clk),
-	 .load(load_pipeline && ~stall && mul_rdy),
+	 .load(load_pipeline && ~stall),
 	 .in(ifid_ghr_out),
 	 .out(idex_ghr_out)
 );
 
 register idex_RS1(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (rs1_in),
     .out  (idex_rs1_out)
 );
 
 register idex_RS2(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (rs2_in),
     .out  (idex_rs2_out)
 );
 
 cw_register idex_CW(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (cw_mux_out),
     .out  (idex_cw)
 );
@@ -455,42 +479,42 @@ cw_register idex_CW(
 //EX/MEM
 register #(1) exmem_resolution(
 	 .clk(clk),
-	 .load(load_pipeline && mul_rdy),
+	 .load(load_pipeline && mul_rdy && div_rdy),
 	 .in(resolution),
 	 .out(exmem_reso)
 );
 
 register exmem_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (idex_pc_out),
     .out  (exmem_pc_out)
 );
 
 register exmem_ALU(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (alu_out),
     .out  (exmem_alu_out)
 );
 
 register exmem_RS2(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (exmem_rs2_in),
     .out  (exmem_rs2_out)
 );
 
 register exmem_CMP(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   ({31'b0, cmp_out}), //perform ZEXT here?
     .out  (exmem_cmp_out)
 );
 
 cw_register exmem_CW(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (idex_cw),
     .out  (exmem_cw)
 );
@@ -498,42 +522,42 @@ cw_register exmem_CW(
 //MEM/WB
 register memwb_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (exmem_pc_out),
     .out  (memwb_pc_out)
 );
 
 register memwb_COMP(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (comp_mux_out),
     .out  (memwb_comp_out)
 );
 
 register memwb_RS2(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (exmem_rs2_out),
     .out  (memwb_rs2_out)
 );
 
 register memwb_CMP(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (exmem_cmp_out), //perform ZEXT here?
     .out  (memwb_cmp_out)
 );
 
 register memwb_mem_addr(
 	 .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (mem_address), //perform ZEXT here?
     .out  (memwb_mem_address)
 );
 
 cw_register memwb_CW(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy),
     .in   (exmem_cw),
     .out  (memwb_cw)
 );
@@ -550,26 +574,31 @@ always_comb begin
 					alu_in1 = idex_rs1_out;
 					cmp_in1 = idex_rs1_out;
 					mul1_in = idex_rs1_out;
+					dividend = idex_rs1_out;
 				 end
 		2'b01: begin
 					alu_in1 = regfilemux_out;
 					cmp_in1 = regfilemux_out;
 					mul1_in = regfilemux_out;
+					dividend = regfilemux_out;
 				 end
 		2'b10: begin
 					alu_in1 = memex_forward;
 					cmp_in1 = memex_forward;
 					mul1_in = memex_forward;
+					dividend = memex_forward;
 				 end
 		2'b11: begin
 					alu_in1 = memex_forward;
 					cmp_in1 = memex_forward;
 					mul1_in = memex_forward;
+					dividend = memex_forward;
 				 end
 		default: begin
 						alu_in1 = idex_rs1_out;
 						cmp_in1 = idex_rs1_out;
 						mul1_in = idex_rs1_out;
+						dividend = idex_rs1_out;
 					end
 	endcase
 	
@@ -579,30 +608,35 @@ always_comb begin
 					cmp_in2 = idex_rs2_out;
 					exmem_rs2_in = idex_rs2_out;
 					mul2_in = idex_rs2_out;
+					divisor = idex_rs2_out;
 				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
 					cmp_in2 = regfilemux_out;
 					exmem_rs2_in = regfilemux_out;
 					mul2_in = regfilemux_out;
+					divisor = regfilemux_out;
 				 end
 		2'b10: begin
 					alu_in2 = memex_forward;
 					cmp_in2 = memex_forward;
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
+					divisor = memex_forward;
 				 end
 		2'b11: begin
 					alu_in2 = memex_forward;
 					cmp_in2 = memex_forward;
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
+					divisor = memex_forward;
 				 end
 		default: begin
 						alu_in2 = idex_rs2_out;
 						cmp_in2 = idex_rs2_out;
 						exmem_rs2_in = idex_rs2_out;
 						mul2_in = idex_rs2_out;
+						divisor = idex_rs2_out;
 					end
 	endcase
 	
@@ -702,7 +736,7 @@ always_comb begin
 	 
 	 unique case(exmem_cw.opcode == op_reg && exmem_cw.funct7 == 7'b0000001)
 		1'b0: comp_mux_out = exmem_alu_out;
-		1'b1: comp_mux_out = mul_res;
+		1'b1: comp_mux_out = exmem_cw.funct3[2] ? (exmem_cw.funct3[1] ? remainder : quotient) : mul_res;
 	 endcase
 	 
 	 //write back

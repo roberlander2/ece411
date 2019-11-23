@@ -1,4 +1,4 @@
-# runs in 12905 ns
+# runs in 13205 ns
 .align 4
 .section .text
 .globl _start

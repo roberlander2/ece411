@@ -17,7 +17,6 @@ localparam idx_size = 6;
 localparam num_sets = 2 ** idx_size;
 localparam tag_size = size - 6;
 
-logic [size-1: idx_size] rtag;
 logic [size-1: idx_size] wtag;
 logic [idx_size-1:0] ridx;
 logic [idx_size-1:0] widx; 
@@ -25,7 +24,6 @@ rv32i_word tar_out;
 logic [tag_size-1: 0] tag_out;
 logic valid_out;
 
-assign rtag = rPC[size-1:idx_size];
 assign wtag = wPC[size-1:idx_size];
 assign ridx = rPC[idx_size-1:0]; //64 entries in the BTB
 assign widx = wPC[idx_size-1:0]; 

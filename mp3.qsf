@@ -69,10 +69,14 @@ set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME div_tb -section_id div_tb
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-
 set_global_assignment -name SYSTEMVERILOG_FILE div_types.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/predictor_table.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/global_history_reg.sv
+set_global_assignment -name EDA_TEST_BENCH_NAME pseudo_lru_tb -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id pseudo_lru_tb
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME pseudo_lru_tb -section_id pseudo_lru_tb
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/plru_array.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/pseudo_lru.sv
 set_global_assignment -name SDC_FILE mp3.out.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_dp.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter_control.sv
@@ -114,6 +118,16 @@ set_global_assignment -name SYSTEMVERILOG_FILE hdl/multiplier.sv
 set_global_assignment -name SYSTEMVERILOG_FILE mult_types.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/divider.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/divider_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_index_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_update.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/way_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/lru_hit_index_calc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/pseudo_lru_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/parameter_mux.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/multi_out_mux.sv
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/magic_dual_port.sv -section_id mp3_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/mp3_tb.sv -section_id mp3_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id mp3_tb
@@ -130,4 +144,5 @@ set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id mu
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/mult_tb.sv -section_id mult_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/div_tb.sv -section_id div_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/tb_itf.sv -section_id div_tb
+set_global_assignment -name EDA_TEST_BENCH_FILE hvl/mp3/pseudo_lru_tb.sv -section_id pseudo_lru_tb
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -37,7 +37,7 @@ assign dataout = _dataout;
 //end
 always_comb begin
 	unique case(read)
-		1'b0: _dataout = 32'hXXXXXXXX;
+		1'b0: _dataout = {width{1'bX}};
 		1'b1: _dataout = (load  & (rindex == windex)) ? datain : data[rindex];
 	endcase
 end

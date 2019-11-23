@@ -8,13 +8,14 @@ timeprecision 1ns;
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
 int timeout = 1000000;   // Feel Free to adjust the timeout value
-int correct;
+int mispredicts_BP;
+int mispredicts_SNT;
 int num_inst;
 
 initial begin
     itf.halt = 1'b0;
-    correct = 1'b0;
-    num_inst = 1'b0;
+    mispredicts_BP = 1'b0;
+    mispredicts_SNT = 1'b0;
 end
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
@@ -28,15 +29,20 @@ always @(posedge itf.clk) begin
         itf.halt <= 1'b1;
     end
     if (itf.halt) begin
-      $display("Correct: %d, Total Instructions: %d", correct, num_inst);
+      $display("Tournament Branch Predictor Mispredicts: %d", mispredicts_BP);
+      $display("Static-Not-Taken Branch Predictor Mispredicts: %d", mispredicts_SNT);
       $finish;
     end
     if (timeout == 0) begin
         $display("TOP: Timed out");
         $finish;
     end
-    if(dut.dp.resolution && dut.dp.load_pipeline) begin
-      correct <= correct + 1;
+    if(dut.dp.mispredict && dut.dp.load_pipeline) begin
+      mispredicts_BP <= mispredicts_BP + 1;
+    end
+
+    if(dut.dp.br_en && dut.dp.load_pipeline) begin
+      mispredicts_SNT <= mispredicts_SNT + 1;
     end
 
     if(dut.dp.load_pipeline) begin

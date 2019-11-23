@@ -498,42 +498,42 @@ cw_register exmem_CW(
 //MEM/WB
 register memwb_PC(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (exmem_pc_out),
     .out  (memwb_pc_out)
 );
 
 register memwb_COMP(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (comp_mux_out),
     .out  (memwb_comp_out)
 );
 
 register memwb_RS2(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (exmem_rs2_out),
     .out  (memwb_rs2_out)
 );
 
 register memwb_CMP(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (exmem_cmp_out), //perform ZEXT here?
     .out  (memwb_cmp_out)
 );
 
 register memwb_mem_addr(
 	 .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (mem_address), //perform ZEXT here?
     .out  (memwb_mem_address)
 );
 
 cw_register memwb_CW(
     .clk  (clk),
-    .load (load_pipeline),
+    .load (load_pipeline && mul_rdy),
     .in   (exmem_cw),
     .out  (memwb_cw)
 );

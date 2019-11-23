@@ -15,7 +15,7 @@ module multiplier
 );
 
 /******************************** Declarations *******************************/
-mstate_s ms;
+mstate_s ms = '{default: '0, ready: 1'b1};
 mstate_s ms_reset;
 mstate_s ms_init;
 mstate_s ms_add;

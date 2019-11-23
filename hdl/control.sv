@@ -29,7 +29,7 @@ function void setALU(alumux::alumux1_sel_t sel1,
       cw.aluop = op;
 endfunction
 
-function void setMUL(logic signed1, logic signed2, logic half_sel);
+function void setMul(logic signed1, logic signed2, logic half_sel);
 	cw.signed1 = signed1;
 	cw.signed2 = signed2;
 	cw.half_sel = half_sel;

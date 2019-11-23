@@ -44,7 +44,7 @@ fi
 OBJ_FILE="${WORK_DIR}/$(basename $ASM_FILE .asm).obj"
 
 # Assemble code
-"$ASSEMBLER" -ffreestanding --march="rv32im" -nostdlib "${WORK_DIR}/$(basename $ASM_FILE)" -Wl,--no-relax -o "$OBJ_FILE"
+"$ASSEMBLER" -ffreestanding -march="rv32im" -nostdlib "${WORK_DIR}/$(basename $ASM_FILE)" -Wl,--no-relax -o "$OBJ_FILE"
 
 # Fail if object file doesn't exist or has no memory content
 if [[ ! -e "$OBJ_FILE" || "$(cat "$OBJ_FILE" | wc -c)" -le "1" ]]; then

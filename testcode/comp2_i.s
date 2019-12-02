@@ -1,55 +1,7 @@
-	.file	"comp2.c"
-	.option nopic
-	.globl	__mulsi3
-	.text
-	.align	2
-	.globl	foo
-	.hidden	foo
-	.type	foo, @function
-foo:
-	addi	sp,sp,-32
-	sw	ra,28(sp)
-	sw	s0,24(sp)
-	sw	s1,20(sp)
-	sw	s2,16(sp)
-	sw	s3,12(sp)
-	sw	s4,8(sp)
-	sw	s5,4(sp)
-	beqz	a2,.L4
-	mv	s1,a0
-	mv	s2,a1
-	addi	s0,a2,-1
-	slli	s4,a3,2
-	li	s3,0
-	li	s5,-1
-.L3:
-	addi	s1,s1,4
-	lw	a1,0(s2)
-	lw	a0,-4(s1)
-	call	__mulsi3
-	add	s3,s3,a0
-	add	s2,s2,s4
-	addi	s0,s0,-1
-	bne	s0,s5,.L3
-.L1:
-	mv	a0,s3
-	lw	ra,28(sp)
-	lw	s0,24(sp)
-	lw	s1,20(sp)
-	lw	s2,16(sp)
-	lw	s3,12(sp)
-	lw	s4,8(sp)
-	lw	s5,4(sp)
-	addi	sp,sp,32
-	jr	ra
-.L4:
-	mv	s3,a2
-	j	.L1
-	.size	foo, .-foo
-	.align	2
-	.globl	_start
-	.hidden	_start
-	.type	_start, @function
+.align 4
+.section .text
+.globl _start
+
 _start:
 	li	sp,0x84000000
 	addi	sp,sp,-704
@@ -113,11 +65,47 @@ _start:
 .L22:
 .L14:
 	j	.L14
-	.size	_start, .-_start
-	.align	2
-	.globl	__mulsi3
-	.hidden	__mulsi3
-	.type	__mulsi3, @function
+
+foo:
+	addi	sp,sp,-32
+	sw	ra,28(sp)
+	sw	s0,24(sp)
+	sw	s1,20(sp)
+	sw	s2,16(sp)
+	sw	s3,12(sp)
+	sw	s4,8(sp)
+	sw	s5,4(sp)
+	beqz	a2,.L4
+	mv	s1,a0
+	mv	s2,a1
+	addi	s0,a2,-1
+	slli	s4,a3,2
+	li	s3,0
+	li	s5,-1
+.L3:
+	addi	s1,s1,4
+	lw	a1,0(s2)
+	lw	a0,-4(s1)
+	call	__mulsi3
+	add	s3,s3,a0
+	add	s2,s2,s4
+	addi	s0,s0,-1
+	bne	s0,s5,.L3
+.L1:
+	mv	a0,s3
+	lw	ra,28(sp)
+	lw	s0,24(sp)
+	lw	s1,20(sp)
+	lw	s2,16(sp)
+	lw	s3,12(sp)
+	lw	s4,8(sp)
+	lw	s5,4(sp)
+	addi	sp,sp,32
+	jr	ra
+.L4:
+	mv	s3,a2
+	j	.L1
+
 __mulsi3:
 	mv	a5,a0
 	beqz	a0,.L28
@@ -136,5 +124,4 @@ __mulsi3:
 	ret
 .L28:
 	ret
-	.size	__mulsi3, .-__mulsi3
-	.ident	"GCC: (GNU) 7.2.0"
+

@@ -9,6 +9,7 @@ _start:
   lw x1, OP1 # use x1 as result register
   lw x2, OP2
   mul x3, x1, x2
+  add x4, x0, x3
   sw x3, 0(x7)
   lw x10, RES
 

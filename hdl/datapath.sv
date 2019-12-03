@@ -53,16 +53,23 @@ control_word_t cw_mux_out;
 rv32i_word alu_out;
 logic [63:0] mul_out;
 logic [31:0] mul_res;
+logic [31:0] exmem_mul_res;
 logic [31:0] mul1_in;
 logic [31:0] mul2_in;
 logic mul_rdy;
+logic exmem_mul_rdy;
 logic mul_done;
-logic [31:0] remainder;
+logic exmem_mul_done;
 logic [31:0] quotient;
+logic [31:0] remainder;
+logic [31:0] exmem_remainder;
+logic [31:0] exmem_quotient;
 logic [31:0] dividend;
 logic [31:0] divisor;
 logic div_rdy;
 logic div_done;
+logic exmem_div_rdy;
+logic exmem_div_done;
 logic cmp_out;
 logic mispredict; //flush due to a mispredict
 logic mispred_flush;
@@ -180,7 +187,7 @@ logic stall_rs2;
 logic _stall;
 
 assign _stall = (stall_rs1 || stall_rs2 ) && (idex_cw.opcode == op_load);
-assign stall = _stall || ~mul_rdy || ~div_rdy;
+assign stall = _stall || (~exmem_mul_rdy || ~mul_rdy) || (~exmem_div_rdy || ~mul_rdy);
 forward exmem_rs1 (
 	.write(exmem_cw.load_regfile),
 	.valid_src(idex_cw.rs1_valid),
@@ -426,7 +433,7 @@ register #(10) ifid_ghr(
 //ID/EX
 register idex_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
 );
@@ -454,21 +461,21 @@ register #(10) idex_ghr(
 
 register idex_RS1(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (rs1_in),
     .out  (idex_rs1_out)
 );
 
 register idex_RS2(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (rs2_in),
     .out  (idex_rs2_out)
 );
 
 cw_register idex_CW(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (cw_mux_out),
     .out  (idex_cw)
 );
@@ -476,24 +483,73 @@ cw_register idex_CW(
 //EX/MEM
 register #(1) exmem_resolution(
 	 .clk(clk),
-	 .load(load_pipeline && mul_rdy && div_rdy),
+	 .load(load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
 	 .in(resolution),
 	 .out(exmem_reso)
 );
 
 register exmem_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (idex_pc_out),
     .out  (exmem_pc_out)
 );
 
 register exmem_ALU(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
     .in   (alu_out),
     .out  (exmem_alu_out)
 );
+
+register exmem_MUL(
+    .clk  (clk),
+    .load (load_pipeline && mul_done),
+    .in   (mul_res),
+    .out  (exmem_mul_res)
+);
+
+register #(1) exmem_MUL_RDY(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (mul_rdy),
+    .out  (exmem_mul_rdy)
+);
+
+register #(1) exmem_MUL_DONE(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (mul_done),
+    .out  (exmem_mul_done)
+);
+
+register exmem_DIVQ(
+    .clk  (clk),
+    .load (load_pipeline && div_done),
+    .in   (quotient),
+    .out  (exmem_quotient)
+);
+register exmem_DIVR(
+    .clk  (clk),
+    .load (load_pipeline && div_done),
+    .in   (remainder),
+    .out  (exmem_remainder)
+);
+
+register #(1) exmem_DIV_RDY(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (div_rdy),
+    .out  (exmem_div_rdy)
+);
+
+register #(1) exmem_DIV_DONE(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (div_done),
+    .out  (exmem_div_done)
+);
+
 
 register exmem_RS2(
     .clk  (clk),

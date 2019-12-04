@@ -6,11 +6,10 @@ package mult_types;
 		  logic [31:0] multiplier;
     } multi_inputs_t;
 
-    typedef enum bit[2:0] {
-        NONE=3'b0,
-		  ADD=3'b101,
-		  SHIFT=3'b110,
-		  DONE=3'b011
+    typedef enum bit[1:0] {
+        NONE=2'b0,
+		  ADD_SHIFT=2'b01,
+		  DONE=2'b10
     } op_e;
 
     typedef struct packed {

@@ -364,7 +364,6 @@ alu ALU(
 
 multiplier MUL(
 	 .clk_i(clk),
-    .reset_n_i (1'b1),
 	 .signed1(idex_cw.signed1),
 	 .signed2(idex_cw.signed2),
     .multiplicand_i(mul1_in),
@@ -388,8 +387,8 @@ divider DIV(
 );
 
 cmp CMP (
-	.a(cmp_in1), //idex_rs1_out
-	.b(cmpmux_out), //cmpmux_out
+	.a(cmp_in1),
+	.b(cmpmux_out),
 	.cmpop(idex_cw.cmpop),
 	.br_en(cmp_out)
 );

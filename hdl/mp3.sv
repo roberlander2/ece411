@@ -79,23 +79,17 @@ l2_ret_reg l2_return(
 );
 
 // COMMENT TO REMOVE L2
-l2_cache #(5, 4, 8) level_two(
+l2_cache #(5, 4) level_two(
 	.clk						(clk),
-//	.mem_address			(arb_l2_address),
-//	.mem_wdata				(arb_l2_wdata),
-//	.mem_read				(arb_l2_read),
-//	.mem_write				(arb_l2_write),
 	.pmem_resp				(pmem_resp),
 	.pmem_rdata				(pmem_rdata),
 	.l2_go					(l2_go),
 	
-//	.mem_rdata				(arb_l2_rdata),
 	.pmem_wdata				(pmem_wdata),
 	.pmem_address			(pmem_address),
 	.pmem_read				(pmem_read),
 	.pmem_write				(pmem_write),
 	.l2_ret					(l2_ret)
-//	.mem_resp				(arb_l2_resp)
 );
 
 // COMMENT TO REMOVE L2

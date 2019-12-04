@@ -4,7 +4,7 @@
 
 RISCV_GCC=riscv32-unknown-elf-gcc
 LINK_FILE=./baremetal_link.ld
-FLAGS="-march=rv32i -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T$LINK_FILE -Wl,--no-relax"
+FLAGS="-march=rv32im -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T$LINK_FILE -Wl,--no-relax"
 BINARY_NAME=riscv_test_bin
 
 if [ -z "$1" ]; then

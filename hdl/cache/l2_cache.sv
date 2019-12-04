@@ -12,13 +12,13 @@ module l2_cache #(
 )
 (
 	input clk,
-	input rv32i_word mem_address,
-	input [s_line-1:0] mem_wdata,
-	input logic mem_read,
-	input logic mem_write,
+//	input rv32i_word mem_address,
+//	input [s_line-1:0] mem_wdata,
+//	input logic mem_read,
+//	input logic mem_write,
 	input logic pmem_resp,
 	input [s_line-1:0] pmem_rdata,
-//	input l2_go_t l2_go,
+	input l2_go_t l2_go,
 //	output [s_line-1:0] mem_rdata,
 	output logic [s_line-1:0] pmem_wdata,
 	output rv32i_word pmem_address,
@@ -44,18 +44,18 @@ logic lru_valid;
 logic mem_resp;
 logic [s_line-1:0] mem_rdata;
 
-//rv32i_word mem_address;
-//logic [s_line-1:0] mem_wdata;
-//logic mem_read;
-//logic mem_write;
+rv32i_word mem_address;
+logic [s_line-1:0] mem_wdata;
+logic mem_read;
+logic mem_write;
 
 assign l2_ret.mem_resp = mem_resp;
 assign l2_ret.mem_rdata = mem_rdata;
 
-//assign mem_address = l2_go.mem_address;
-//assign mem_wdata = l2_go.mem_wdata;
-//assign mem_read = l2_go.mem_read;
-//assign mem_write = l2_go.mem_write;
+assign mem_address = l2_go.mem_address;
+assign mem_wdata = l2_go.mem_wdata;
+assign mem_read = l2_go.mem_read;
+assign mem_write = l2_go.mem_write;
 
 l2_cache_control #(s_assoc) control(.*);
 

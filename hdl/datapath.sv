@@ -20,7 +20,6 @@ module datapath
 localparam ghr_size = 10;
 //loads
 logic load_pc;
-logic flag;
 logic is_br;
 logic is_jalr;
 logic is_jal;
@@ -32,7 +31,6 @@ logic read_gst;
 logic update_gst;
 logic [ghr_size-1:0] ghr_out;
 logic resolution;
-logic [31:0] temp;
 
 //mux outputs
 rv32i_word pcmux1_out;
@@ -129,8 +127,6 @@ rv32i_word memex_forward;
 rv32i_word rs1_in;
 rv32i_word rs2_in;
 rv32i_word mem_wdata_forward;
-
-assign temp = memex_forward;
 
 rv32i_word memwb_mem_address;
 logic [1:0] mem_addrmod4;
@@ -670,7 +666,6 @@ always_comb begin
 					exmem_rs2_in = idex_rs2_out;
 					mul2_in = idex_rs2_out;
 					divisor = idex_rs2_out;
-					flag = 0;
 				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
@@ -678,7 +673,6 @@ always_comb begin
 					exmem_rs2_in = regfilemux_out;
 					mul2_in = regfilemux_out;
 					divisor = regfilemux_out;
-					flag = 1;
 				 end
 		2'b10: begin
 					alu_in2 = memex_forward;
@@ -686,7 +680,6 @@ always_comb begin
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
 					divisor = memex_forward;
-					flag = 1;
 				 end
 		2'b11: begin
 					alu_in2 = memex_forward;
@@ -694,7 +687,6 @@ always_comb begin
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
 					divisor = memex_forward;
-					flag = 1;
 				 end
 		default: begin
 						alu_in2 = memex_forward;
@@ -702,7 +694,6 @@ always_comb begin
 						exmem_rs2_in = idex_rs2_out;
 						mul2_in = idex_rs2_out;
 						divisor = idex_rs2_out;
-						flag = 0;
 					end
 	endcase
 	

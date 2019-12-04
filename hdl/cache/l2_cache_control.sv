@@ -41,6 +41,7 @@ endfunction
 
 enum int unsigned {
 	idle,
+	go_update,
 	hit_detection,
 	load,
 	plop,
@@ -57,9 +58,10 @@ always_comb begin
 					next_state = hit_detection;
 				else
 					next_state = idle;
+		go_update: next_state = idle;
 		hit_detection: begin	//combine into mux? with  select  {hit,miss,dirty}
 								if(hit)
-									next_state = idle;
+									next_state = go_update;
 								else
 									unique case(dirty_ctrl)
 										1'b0: next_state = mem_read ? load : plop;
@@ -69,8 +71,8 @@ always_comb begin
 		load: if(~pmem_resp)
 					next_state = load;
 				else
-					next_state = idle;
-		plop: next_state = idle;
+					next_state = go_update;
+		plop: next_state = go_update;
 		store: if(~pmem_resp)
 					next_state = store;
 				 else
@@ -119,6 +121,7 @@ always_comb begin
 					pmem_write = lru_valid;
 					clear_dirty = lru_oh << lru_out;
 				end
+		default : ;
 	endcase
 end
 

@@ -10,6 +10,10 @@ _start:
   lw x2, OP2
   mul x3, x1, x2
   add x4, x0, x3
+  nop
+  nop
+  nop
+  nop
   sw x3, 0(x7)
   lw x10, RES
 

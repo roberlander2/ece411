@@ -20,7 +20,7 @@ module datapath
 localparam ghr_size = 10;
 //loads
 logic load_pc;
-
+logic flag;
 logic is_br;
 logic is_jalr;
 logic is_jal;
@@ -32,6 +32,7 @@ logic read_gst;
 logic update_gst;
 logic [ghr_size-1:0] ghr_out;
 logic resolution;
+logic [31:0] temp;
 
 //mux outputs
 rv32i_word pcmux1_out;
@@ -119,6 +120,8 @@ rv32i_word memwb_rs2_out;
 control_word_t memwb_cw;
 rv32i_word alu_in1;
 rv32i_word alu_in2;
+rv32i_word alu_in11;
+rv32i_word alu_in22;
 rv32i_word cmp_in1;
 rv32i_word cmp_in2;
 rv32i_word exmem_rs2_in;
@@ -126,6 +129,8 @@ rv32i_word memex_forward;
 rv32i_word rs1_in;
 rv32i_word rs2_in;
 rv32i_word mem_wdata_forward;
+
+assign temp = memex_forward;
 
 rv32i_word memwb_mem_address;
 logic [1:0] mem_addrmod4;
@@ -185,6 +190,9 @@ logic forward_wb2mem;
 logic stall_rs1;
 logic stall_rs2;
 logic _stall;
+
+assign alu_in11 = (exmem_cw.opcode == op_reg && exmem_cw.funct7 == 7'b0000001 && forward_exmem_rs1) ? (exmem_cw.funct3[2] ? (exmem_cw.funct3[1] ? exmem_remainder : exmem_quotient) : exmem_mul_res) : alu_in1;
+assign alu_in22 = (exmem_cw.opcode == op_reg && exmem_cw.funct7 == 7'b0000001 && forward_exmem_rs2) ? (exmem_cw.funct3[2] ? (exmem_cw.funct3[1] ? exmem_remainder : exmem_quotient) : exmem_mul_res) : alu_in2;
 
 assign _stall = (stall_rs1 || stall_rs2 ) && (idex_cw.opcode == op_load);
 assign stall = _stall || (~exmem_mul_rdy || ~mul_rdy) || (~exmem_div_rdy || ~mul_rdy);
@@ -433,7 +441,7 @@ register #(10) ifid_ghr(
 //ID/EX
 register idex_PC(
     .clk  (clk),
-    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (ifid_pc_out),
     .out  (idex_pc_out)
 );
@@ -461,21 +469,21 @@ register #(10) idex_ghr(
 
 register idex_RS1(
     .clk  (clk),
-    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (rs1_in),
     .out  (idex_rs1_out)
 );
 
 register idex_RS2(
     .clk  (clk),
-    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (rs2_in),
     .out  (idex_rs2_out)
 );
 
 cw_register idex_CW(
     .clk  (clk),
-    .load (load_pipeline && exmem_mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (cw_mux_out),
     .out  (idex_cw)
 );
@@ -483,21 +491,21 @@ cw_register idex_CW(
 //EX/MEM
 register #(1) exmem_resolution(
 	 .clk(clk),
-	 .load(load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
+	 .load(load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
 	 .in(resolution),
 	 .out(exmem_reso)
 );
 
 register exmem_PC(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (idex_pc_out),
     .out  (exmem_pc_out)
 );
 
 register exmem_ALU(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (alu_out),
     .out  (exmem_alu_out)
 );
@@ -553,21 +561,21 @@ register #(1) exmem_DIV_DONE(
 
 register exmem_RS2(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (exmem_rs2_in),
     .out  (exmem_rs2_out)
 );
 
 register exmem_CMP(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   ({31'b0, cmp_out}), //perform ZEXT here?
     .out  (exmem_cmp_out)
 );
 
 cw_register exmem_CW(
     .clk  (clk),
-    .load (load_pipeline && mul_rdy && div_rdy),
+    .load (load_pipeline && exmem_mul_rdy && exmem_div_rdy && mul_rdy && div_rdy),
     .in   (idex_cw),
     .out  (exmem_cw)
 );
@@ -662,6 +670,7 @@ always_comb begin
 					exmem_rs2_in = idex_rs2_out;
 					mul2_in = idex_rs2_out;
 					divisor = idex_rs2_out;
+					flag = 0;
 				 end
 		2'b01: begin
 					alu_in2 = regfilemux_out;
@@ -669,6 +678,7 @@ always_comb begin
 					exmem_rs2_in = regfilemux_out;
 					mul2_in = regfilemux_out;
 					divisor = regfilemux_out;
+					flag = 1;
 				 end
 		2'b10: begin
 					alu_in2 = memex_forward;
@@ -676,6 +686,7 @@ always_comb begin
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
 					divisor = memex_forward;
+					flag = 1;
 				 end
 		2'b11: begin
 					alu_in2 = memex_forward;
@@ -683,17 +694,25 @@ always_comb begin
 					exmem_rs2_in = memex_forward;
 					mul2_in = memex_forward;
 					divisor = memex_forward;
+					flag = 1;
 				 end
 		default: begin
-						alu_in2 = idex_rs2_out;
+						alu_in2 = memex_forward;
 						cmp_in2 = idex_rs2_out;
 						exmem_rs2_in = idex_rs2_out;
 						mul2_in = idex_rs2_out;
 						divisor = idex_rs2_out;
+						flag = 0;
 					end
 	endcase
 	
 	unique case (exmem_cw.regfilemux_sel)
+//		regfilemux::alu_out: begin
+//										if(exmem_cw.opcode == op_reg && exmem_cw.funct7 == 7'b0000001)
+//											memex_forward = exmem_cw.funct3[2] ? (exmem_cw.funct3[1] ? exmem_remainder : exmem_quotient) : exmem_mul_res;
+//										else
+//											memex_forward = exmem_alu_out;
+//									end
 		regfilemux::alu_out: memex_forward = exmem_alu_out;
 		regfilemux::br_en: memex_forward = exmem_cmp_out;
 		regfilemux::u_imm: memex_forward = exmem_cw.u_imm;
@@ -759,7 +778,7 @@ always_comb begin
 	 
 	 //execute
 	 unique case (idex_cw.alumux1_sel)
-		 alumux::rs1_out: alumux1_out = alu_in1;
+		 alumux::rs1_out: alumux1_out = alu_in11;
 		 alumux::pc_out: alumux1_out = idex_pc_out;
 		 default: `BAD_MUX_SEL;
 	 endcase
@@ -770,7 +789,7 @@ always_comb begin
 		 alumux::b_imm: alumux2_out = idex_cw.b_imm;
 		 alumux::s_imm: alumux2_out = idex_cw.s_imm;
 		 alumux::j_imm: alumux2_out = idex_cw.j_imm;
-		 alumux::rs2_out: alumux2_out = alu_in2;
+		 alumux::rs2_out: alumux2_out = alu_in22;
 		 default: `BAD_MUX_SEL;
 	 endcase
 	 

@@ -2,8 +2,8 @@ import rv32i_types::*;
 
 module mp3_tb;
 
-timeunit 1ns;
-timeprecision 1ns;
+timeunit 100ps;
+timeprecision 100ps;
 
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
@@ -83,7 +83,7 @@ mp3 dut(
     .pmem_read    (itf.pmem_read)
 );
 
-memory physical_memory(
+physical_memory physical_memory(
     .clk      (itf.clk),
     .read     (itf.pmem_read),
     .write    (itf.pmem_write),

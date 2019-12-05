@@ -22,7 +22,7 @@ typedef enum bit [6:0] {
     op_load  = 7'b0000011, //load (I type)
     op_store = 7'b0100011, //store (S type)
     op_imm   = 7'b0010011, //arith ops with register/immediate operands (I type)
-    op_reg   = 7'b0110011, //arith ops with register operands (R type)
+    op_reg   = 7'b0110011, //arith ops with register operands (R type) // also corresponds to MEXT opcodes
     op_csr   = 7'b1110011  //control and status register (I type)
 } rv32i_opcode;
 
@@ -98,7 +98,9 @@ typedef struct packed {
 	rv32i_word s_imm;
 	rv32i_word j_imm;
 	logic [3:0] wmask;
-	//add all other relevant signals 
+	logic signed1;
+	logic signed2;
+	logic half_sel;
 } control_word_t;
 
 typedef struct packed {

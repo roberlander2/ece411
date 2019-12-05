@@ -161,7 +161,6 @@ always_comb begin
 		  default: datain[1] = pmem_rdata;
     endcase
 	
-	//dirty = (dirty0_out & ~lru_out) | (dirty1_out & lru_out);
 	unique case(lru_out)
 		dirty_mux::dirty0: begin
 										dirty_ctrl = dirty_out0;

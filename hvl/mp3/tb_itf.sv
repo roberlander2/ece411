@@ -29,6 +29,6 @@ initial begin
     #40;
 end
 
-always #48 clk = ~clk;
+always #47.5 clk = ~clk;
 
 endinterface : tb_itf

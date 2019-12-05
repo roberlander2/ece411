@@ -58,7 +58,6 @@ logic [31:0] mul2_in;
 logic mul_rdy;
 logic exmem_mul_rdy;
 logic mul_done;
-logic exmem_mul_done;
 logic [31:0] quotient;
 logic [31:0] remainder;
 logic [31:0] exmem_remainder;
@@ -68,7 +67,6 @@ logic [31:0] divisor;
 logic div_rdy;
 logic div_done;
 logic exmem_div_rdy;
-logic exmem_div_done;
 logic cmp_out;
 logic mispredict; //flush due to a mispredict
 logic mispred_flush;
@@ -519,13 +517,6 @@ register #(1) exmem_MUL_RDY(
     .out  (exmem_mul_rdy)
 );
 
-register #(1) exmem_MUL_DONE(
-    .clk  (clk),
-    .load (load_pipeline),
-    .in   (mul_done),
-    .out  (exmem_mul_done)
-);
-
 register exmem_DIVQ(
     .clk  (clk),
     .load (load_pipeline && div_done),
@@ -544,13 +535,6 @@ register #(1) exmem_DIV_RDY(
     .load (load_pipeline),
     .in   (div_rdy),
     .out  (exmem_div_rdy)
-);
-
-register #(1) exmem_DIV_DONE(
-    .clk  (clk),
-    .load (load_pipeline),
-    .in   (div_done),
-    .out  (exmem_div_done)
 );
 
 

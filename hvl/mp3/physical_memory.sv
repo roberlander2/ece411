@@ -1,6 +1,6 @@
 module physical_memory
 #(
-    parameter real freq = 103.89 // Frequency in MHz
+    parameter real freq = 105.9 // Frequency in MHz
 )
 (
     input clk,

@@ -27,6 +27,6 @@ HALT:
 .section .rodata
 .balign 256
 
-OP1: .word 411
-OP2: .word 385
+OP1: .word 7
+OP2: .word 12
 RES: .word 0x0

@@ -2,12 +2,12 @@
 	.option nopic
 	.globl	__mulsi3
 	.text
-	.align	4
+	.align	2
 	.globl	_start
 	.hidden	_start
 	.type	_start, @function
 _start:
-	li	sp,0x84000000
+	li	sp, 0x84000000
 	addi	sp,sp,-288
 	sw	ra,284(sp)
 	sw	s0,280(sp)
@@ -59,7 +59,7 @@ _start:
 .L6:
 	j	.L6
 	.size	_start, .-_start
-	.align	4
+	.align	2
 	.globl	foo
 	.hidden	foo
 	.type	foo, @function
@@ -116,7 +116,7 @@ foo:
 	addi	sp,sp,48
 	jr	ra
 	.size	foo, .-foo
-	.align	4
+	.align	2
 	.globl	__mulsi3
 	.hidden	__mulsi3
 	.type	__mulsi3, @function

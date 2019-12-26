@@ -4,8 +4,8 @@
 **/
 interface tb_itf;
 
-timeunit 100ps;
-timeprecision 100ps;
+timeunit 1ns;
+timeprecision 1ns;
 
 bit clk;
 
@@ -29,6 +29,6 @@ initial begin
     #40;
 end
 
-always #47.5 clk = ~clk;
+always #5 clk = ~clk;
 
 endinterface : tb_itf

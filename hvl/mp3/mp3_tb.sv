@@ -2,8 +2,8 @@ import rv32i_types::*;
 
 module mp3_tb;
 
-timeunit 100ps;
-timeprecision 100ps;
+timeunit 1ns;
+timeprecision 1ns;
 
 /*********************** Variable/Interface Declarations *********************/
 tb_itf itf();
@@ -14,22 +14,16 @@ int num_inst;
 int l2_resp_count;
 int pmem_mem_access_count;
 int cache_stall_cycles;
-int cycles;
 
 initial begin
     itf.halt = 1'b0;
     mispredicts_BP = 1'b0;
     mispredicts_SNT = 1'b0;
-    cycles = 0;
 end
 /************************* Error Halting Conditions **************************/
 // Stop simulation on memory error detection
 always @(posedge itf.clk iff itf.pm_error) begin
     $display("TOP: Halting on Physical Memory Error at time = %0t ps", $time);
-end
-
-always @(posedge itf.clk) begin
-  cycles <= cycles + 1;
 end
 
 // Stop simulation on timeout (stall detection), halt
@@ -59,10 +53,9 @@ always @(posedge itf.clk) begin
     if (itf.halt) begin
         $display("Tournament Branch Predictor Mispredicts: %0d", mispredicts_BP);
         $display("Static-Not-Taken Branch Predictor Mispredicts: %0d", mispredicts_SNT);
-        $display("L2 mem_resp count: %0d", l2_resp_count);
-        $display("pmem_access count: %0d", pmem_mem_access_count);
-        $display("cache stall cycles: %0d", cache_stall_cycles);
-        $display("Number of cycles: %0d", cycles);
+        $display("L2 mem_resp count = %0d", l2_resp_count);
+        $display("pmem_access count = %0d", pmem_mem_access_count);
+        $display("cache stall cycles = %0d", cache_stall_cycles);
         $finish;
     end
     if (timeout == 0) begin
@@ -90,7 +83,7 @@ mp3 dut(
     .pmem_read    (itf.pmem_read)
 );
 
-physical_memory physical_memory(
+memory physical_memory(
     .clk      (itf.clk),
     .read     (itf.pmem_read),
     .write    (itf.pmem_write),

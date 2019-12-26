@@ -58,6 +58,7 @@ logic [31:0] mul2_in;
 logic mul_rdy;
 logic exmem_mul_rdy;
 logic mul_done;
+logic exmem_mul_done;
 logic [31:0] quotient;
 logic [31:0] remainder;
 logic [31:0] exmem_remainder;
@@ -67,6 +68,7 @@ logic [31:0] divisor;
 logic div_rdy;
 logic div_done;
 logic exmem_div_rdy;
+logic exmem_div_done;
 logic cmp_out;
 logic mispredict; //flush due to a mispredict
 logic mispred_flush;
@@ -362,6 +364,7 @@ alu ALU(
 
 multiplier MUL(
 	 .clk_i(clk),
+    .reset_n_i (1'b1),
 	 .signed1(idex_cw.signed1),
 	 .signed2(idex_cw.signed2),
     .multiplicand_i(mul1_in),
@@ -385,8 +388,8 @@ divider DIV(
 );
 
 cmp CMP (
-	.a(cmp_in1),
-	.b(cmpmux_out),
+	.a(cmp_in1), //idex_rs1_out
+	.b(cmpmux_out), //cmpmux_out
 	.cmpop(idex_cw.cmpop),
 	.br_en(cmp_out)
 );
@@ -517,6 +520,13 @@ register #(1) exmem_MUL_RDY(
     .out  (exmem_mul_rdy)
 );
 
+register #(1) exmem_MUL_DONE(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (mul_done),
+    .out  (exmem_mul_done)
+);
+
 register exmem_DIVQ(
     .clk  (clk),
     .load (load_pipeline && div_done),
@@ -535,6 +545,13 @@ register #(1) exmem_DIV_RDY(
     .load (load_pipeline),
     .in   (div_rdy),
     .out  (exmem_div_rdy)
+);
+
+register #(1) exmem_DIV_DONE(
+    .clk  (clk),
+    .load (load_pipeline),
+    .in   (div_done),
+    .out  (exmem_div_done)
 );
 
 
